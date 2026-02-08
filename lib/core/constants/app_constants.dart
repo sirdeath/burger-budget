@@ -10,9 +10,8 @@ class AppConstants {
   static const String dbVersionKey = 'db_version';
 
   // Remote manifest
-  // TODO: 실제 GitHub Pages URL로 교체
   static const String manifestUrl =
-      'https://example.github.io/burger-budget/manifest.json';
+      'https://sirdeath.github.io/burger-budget/manifest.json';
 
   // Franchise codes
   static const Map<String, String> franchiseNames = {
