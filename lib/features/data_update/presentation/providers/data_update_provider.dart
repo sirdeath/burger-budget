@@ -1,19 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../core/database/database_helper.dart';
+import '../../../../core/di/providers.dart';
 import '../../../../core/errors/result.dart';
-import '../../data/datasources/remote_manifest_datasource.dart';
-import '../../data/repositories/data_update_repository_impl.dart';
 
 part 'data_update_provider.g.dart';
-
-@riverpod
-DataUpdateRepositoryImpl dataUpdateRepository(
-  DataUpdateRepositoryRef ref,
-) {
-  final remoteDatasource = RemoteManifestDatasource();
-  return DataUpdateRepositoryImpl(remoteDatasource, DatabaseHelper.instance);
-}
 
 enum UpdateStatus { idle, checking, downloading, success, error }
 

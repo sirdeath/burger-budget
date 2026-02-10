@@ -1,21 +1,12 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/database/database_helper.dart';
+import '../../../../core/di/providers.dart';
 import '../../../../core/errors/result.dart';
-import '../../data/datasources/recommendation_datasource.dart';
-import '../../data/repositories/recommendation_repository_impl.dart';
 import '../../domain/entities/recommendation.dart';
 
 part 'recommendation_provider.g.dart';
-
-@riverpod
-RecommendationRepositoryImpl recommendationRepository(
-  RecommendationRepositoryRef ref,
-) {
-  final datasource = RecommendationDatasource(DatabaseHelper.instance);
-  return RecommendationRepositoryImpl(datasource);
-}
 
 @riverpod
 class BudgetState extends _$BudgetState {
@@ -66,7 +57,7 @@ class SelectedSortMode extends _$SelectedSortMode {
 
 @riverpod
 Future<List<Recommendation>> recommendations(
-  RecommendationsRef ref, {
+  Ref ref, {
   required int budget,
   required List<String> franchises,
   SortMode sort = SortMode.bestValue,
