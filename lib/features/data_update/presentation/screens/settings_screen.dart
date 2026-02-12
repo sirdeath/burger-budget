@@ -46,7 +46,7 @@ class SettingsScreen extends ConsumerWidget {
                           color: updateState.status == UpdateStatus.error
                               ? theme.colorScheme.error
                               : updateState.status == UpdateStatus.success
-                                  ? Colors.green
+                                  ? theme.colorScheme.primary
                                   : null,
                         ),
                       ),

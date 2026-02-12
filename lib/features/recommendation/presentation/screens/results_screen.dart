@@ -66,17 +66,17 @@ class ResultsScreen extends ConsumerWidget {
               ),
               data: (recommendations) {
                 if (recommendations.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.search_off,
                           size: 64,
-                          color: Colors.grey,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
-                        SizedBox(height: 16),
-                        Text('예산 내 추천 가능한 메뉴가 없습니다'),
+                        const SizedBox(height: 16),
+                        const Text('예산 내 추천 가능한 메뉴가 없습니다'),
                       ],
                     ),
                   );
