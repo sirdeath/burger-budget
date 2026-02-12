@@ -11,7 +11,6 @@ class FranchiseChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(selectedFranchisesProvider);
-    final notifier = ref.read(selectedFranchisesProvider.notifier);
     final isAllSelected =
         selected.length == AppConstants.franchiseCodes.length;
 
@@ -22,7 +21,8 @@ class FranchiseChips extends ConsumerWidget {
         FilterChip(
           label: const Text('전체'),
           selected: isAllSelected,
-          onSelected: (_) => notifier.toggleAll(),
+          onSelected: (_) =>
+              ref.read(selectedFranchisesProvider.notifier).toggleAll(),
           selectedColor: Theme.of(context).colorScheme.primaryContainer,
         ),
         ...AppConstants.franchiseCodes.map((code) {
@@ -31,7 +31,8 @@ class FranchiseChips extends ConsumerWidget {
           return FilterChip(
             label: Text(name),
             selected: selected.contains(code),
-            onSelected: (_) => notifier.toggle(code),
+            onSelected: (_) =>
+                ref.read(selectedFranchisesProvider.notifier).toggle(code),
             selectedColor: color?.withValues(alpha: 0.2),
             checkmarkColor: color,
           );

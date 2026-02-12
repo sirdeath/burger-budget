@@ -85,8 +85,8 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         sorted.sort((a, b) => b.totalPrice.compareTo(a.totalPrice));
       case SortMode.lowestCalories:
         sorted.sort((a, b) {
-          final aCal = a.totalCalories ?? double.maxFinite.toInt();
-          final bCal = b.totalCalories ?? double.maxFinite.toInt();
+          final aCal = a.totalCalories ?? 0x7FFFFFFF;
+          final bCal = b.totalCalories ?? 0x7FFFFFFF;
           return aCal.compareTo(bCal);
         });
     }
