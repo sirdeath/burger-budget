@@ -8,7 +8,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final updateState = ref.watch(dataUpdateNotifierProvider);
+    final updateState = ref.watch(dataUpdateProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
                               updateState.status == UpdateStatus.downloading
                           ? null
                           : () => ref
-                              .read(dataUpdateNotifierProvider.notifier)
+                              .read(dataUpdateProvider.notifier)
                               .checkAndUpdate(),
                       icon: updateState.status == UpdateStatus.checking ||
                               updateState.status == UpdateStatus.downloading
