@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../domain/entities/recommendation.dart';
 import '../../../menu/presentation/screens/menu_detail_screen.dart';
@@ -35,7 +36,10 @@ class ResultsScreen extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             child: SegmentedButton<SortMode>(
               segments: const [
                 ButtonSegment(
@@ -75,14 +79,14 @@ class ResultsScreen extends ConsumerWidget {
                           size: 64,
                           color: Theme.of(context).colorScheme.outline,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.md),
                         const Text('예산 내 추천 가능한 메뉴가 없습니다'),
                       ],
                     ),
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   itemCount: recommendations.length,
                   itemBuilder: (context, index) {
                     return RecommendationCard(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../domain/entities/recommendation.dart';
 
@@ -22,14 +24,29 @@ class RecommendationCard extends StatelessWidget {
     final main = recommendation.mainItem;
     final franchiseName =
         AppConstants.franchiseNames[main.franchise] ?? main.franchise;
+    final franchiseColor = AppTheme.franchiseColors[main.franchise];
 
     return Card(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+        child: Row(
+          children: [
+            if (franchiseColor != null)
+              Container(
+                width: 4,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: franchiseColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -44,7 +61,7 @@ class RecommendationCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       main.name,
@@ -62,13 +79,13 @@ class RecommendationCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               if (recommendation.sideItem != null ||
                   recommendation.drinkItem != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 36),
                   child: Wrap(
-                    spacing: 8,
+                    spacing: AppSpacing.sm,
                     children: [
                       if (recommendation.sideItem != null)
                         _SubItemChip(
@@ -83,7 +100,7 @@ class RecommendationCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -107,6 +124,9 @@ class RecommendationCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+            ),
+          ],
         ),
       ),
     );

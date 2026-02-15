@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../providers/data_update_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -16,11 +17,11 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('설정'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -30,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
                   _InfoTile(
                     icon: Icons.storage,
                     label: '데이터 버전',
@@ -39,7 +40,9 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(height: 24),
                   if (updateState.message != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(
+                        bottom: AppSpacing.sm + AppSpacing.xs,
+                      ),
                       child: Text(
                         updateState.message!,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -83,10 +86,10 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,7 +99,7 @@ class SettingsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
                   const _InfoTile(
                     icon: Icons.info_outline,
                     label: '버전',

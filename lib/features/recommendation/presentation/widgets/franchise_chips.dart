@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../providers/recommendation_provider.dart';
 
@@ -15,8 +16,8 @@ class FranchiseChips extends ConsumerWidget {
         selected.length == AppConstants.franchiseCodes.length;
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
         FilterChip(
           label: const Text('전체'),

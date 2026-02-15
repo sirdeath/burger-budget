@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../../store_finder/presentation/widgets/find_store_button.dart';
 import '../../domain/entities/menu_item.dart';
@@ -29,7 +30,7 @@ class MenuDetailScreen extends StatelessWidget {
         return SingleChildScrollView(
           controller: scrollController,
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -43,17 +44,17 @@ class MenuDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.lg),
                 _buildItemSection(context, '메인', menuItem),
                 if (sideItem != null) ...[
-                  const Divider(height: 32),
+                  const Divider(height: AppSpacing.xl),
                   _buildItemSection(context, '사이드', sideItem!),
                 ],
                 if (drinkItem != null) ...[
-                  const Divider(height: 32),
+                  const Divider(height: AppSpacing.xl),
                   _buildItemSection(context, '음료', drinkItem!),
                 ],
-                const Divider(height: 32),
+                const Divider(height: AppSpacing.xl),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -72,13 +73,13 @@ class MenuDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.lg),
                 Center(
                   child: FindStoreButton(
                     franchiseCode: menuItem.franchise,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
               ],
             ),
           ),
@@ -114,7 +115,7 @@ class MenuDetailScreen extends StatelessWidget {
                       color: theme.colorScheme.outline,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     item.name,
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -130,14 +131,14 @@ class MenuDetailScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         if (item.calories != null)
           _InfoRow(icon: Icons.local_fire_department, text: '${item.calories} kcal'),
         if (item.tags.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
             child: Wrap(
-              spacing: 4,
+              spacing: AppSpacing.xs,
               children: item.tags
                   .map((tag) => Chip(
                         label: Text(tag),
@@ -164,7 +165,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: Theme.of(context).colorScheme.outline),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppSpacing.xs),
         Text(
           text,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(

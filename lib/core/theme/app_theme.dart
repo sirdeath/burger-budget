@@ -12,13 +12,28 @@ class AppTheme {
       seedColor: _primaryColor,
       secondary: _secondaryColor,
     ),
+    textTheme: const TextTheme(
+      headlineSmall: TextStyle(
+        fontWeight: FontWeight.bold,
+      ),
+      titleMedium: TextStyle(
+        fontWeight: FontWeight.w600,
+      ),
+      titleLarge: TextStyle(
+        fontWeight: FontWeight.bold,
+      ),
+    ),
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,
     ),
-    cardTheme: const CardThemeData(
+    cardTheme: CardThemeData(
       elevation: 2,
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
@@ -27,6 +42,47 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 12,
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 16,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 16,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        padding: WidgetStateProperty.all(
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        textStyle: WidgetStateProperty.all(
+          const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
