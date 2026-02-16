@@ -6,6 +6,9 @@ import '../../features/data_update/domain/repositories/data_update_repository.da
 import '../../features/favorite/data/datasources/favorite_local_datasource.dart';
 import '../../features/favorite/data/repositories/favorite_repository_impl.dart';
 import '../../features/favorite/domain/repositories/favorite_repository.dart';
+import '../../features/history/data/datasources/history_local_datasource.dart';
+import '../../features/history/data/repositories/history_repository_impl.dart';
+import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/menu/data/datasources/menu_local_datasource.dart';
 import '../../features/menu/data/repositories/menu_repository_impl.dart';
 import '../../features/menu/domain/repositories/menu_repository.dart';
@@ -39,4 +42,10 @@ DataUpdateRepository dataUpdateRepository(Ref ref) {
 FavoriteRepository favoriteRepository(Ref ref) {
   final datasource = FavoriteLocalDatasource(UserDatabaseHelper.instance);
   return FavoriteRepositoryImpl(datasource);
+}
+
+@riverpod
+HistoryRepository historyRepository(Ref ref) {
+  final datasource = HistoryLocalDatasource(UserDatabaseHelper.instance);
+  return HistoryRepositoryImpl(datasource);
 }

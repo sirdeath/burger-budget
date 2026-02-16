@@ -19,8 +19,9 @@ class UserDatabaseHelper {
     final path = p.join(dir.path, 'user_data.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -35,6 +36,31 @@ class UserDatabaseHelper {
         UNIQUE(main_item_id, side_item_id, drink_item_id)
       )
     ''');
+    await db.execute('''
+      CREATE TABLE order_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        main_item_id TEXT NOT NULL,
+        side_item_id TEXT,
+        drink_item_id TEXT,
+        total_price INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE order_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          main_item_id TEXT NOT NULL,
+          side_item_id TEXT,
+          drink_item_id TEXT,
+          total_price INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future<void> close() async {
