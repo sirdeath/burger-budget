@@ -63,27 +63,20 @@ class ResultsScreen extends ConsumerWidget {
           ),
           Expanded(
             child: asyncRecommendations.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Text('오류: $error'),
+              loading: () => const _SkeletonList(),
+              error: (error, _) => _ErrorView(
+                message: '$error',
+                onRetry: () => ref.invalidate(
+                  recommendationsProvider(
+                    budget: budget,
+                    franchises: franchises,
+                    sort: sortMode,
+                  ),
+                ),
               ),
               data: (recommendations) {
                 if (recommendations.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text('예산 내 추천 가능한 메뉴가 없습니다'),
-                      ],
-                    ),
-                  );
+                  return _EmptyView(budget: budget);
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -92,6 +85,7 @@ class ResultsScreen extends ConsumerWidget {
                     return RecommendationCard(
                       recommendation: recommendations[index],
                       rank: index + 1,
+                      budget: budget,
                       onTap: () => _showDetail(
                         context,
                         recommendations[index],
@@ -115,6 +109,210 @@ class ResultsScreen extends ConsumerWidget {
         menuItem: recommendation.mainItem,
         sideItem: recommendation.sideItem,
         drinkItem: recommendation.drinkItem,
+      ),
+    );
+  }
+}
+
+class _SkeletonList extends StatelessWidget {
+  const _SkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      itemCount: 3,
+      itemBuilder: (_, _) => const _SkeletonCard(),
+    );
+  }
+}
+
+class _SkeletonCard extends StatelessWidget {
+  const _SkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final placeholderColor = theme.colorScheme.surfaceContainerHighest;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: placeholderColor,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  width: 120,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: placeholderColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  width: 64,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: placeholderColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Padding(
+              padding: const EdgeInsets.only(left: 36),
+              child: Row(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: placeholderColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    width: 80,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: placeholderColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 60,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: placeholderColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Container(
+                  width: 80,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: placeholderColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView({required this.budget});
+
+  final int budget;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.no_meals,
+              size: 80,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '추천 가능한 메뉴가 없습니다',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '${formatKRW(budget)} 예산으로는 조합을 찾지 못했어요.\n'
+              '예산을 올리거나 다른 프랜차이즈를 선택해 보세요.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('예산 조정하기'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '오류가 발생했습니다',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('다시 시도'),
+            ),
+          ],
+        ),
       ),
     );
   }
