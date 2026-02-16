@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../../favorite/presentation/widgets/favorite_button.dart';
+import '../../../history/presentation/providers/history_provider.dart';
 import '../../../store_finder/presentation/widgets/find_store_button.dart';
 import '../../domain/entities/menu_item.dart';
 
@@ -137,6 +138,32 @@ class MenuDetailScreen extends ConsumerWidget {
               Center(
                 child: FindStoreButton(
                   franchiseCode: menuItem.franchise,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              // Add to history button
+              Center(
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    await ref
+                        .read(historyListProvider.notifier)
+                        .addFromRecommendation(
+                          mainItemId: menuItem.id,
+                          sideItemId: sideItem?.id,
+                          drinkItemId: drinkItem?.id,
+                          totalPrice: _totalPrice,
+                        );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('주문 이력에 추가했습니다'),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('이 조합 선택'),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
