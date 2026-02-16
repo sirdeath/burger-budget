@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../favorite/presentation/widgets/favorite_button.dart';
 import '../../../store_finder/presentation/widgets/find_store_button.dart';
 import '../../domain/entities/menu_item.dart';
 
-class MenuDetailScreen extends StatelessWidget {
+class MenuDetailScreen extends ConsumerWidget {
   const MenuDetailScreen({
     super.key,
     required this.menuItem,
@@ -20,7 +22,7 @@ class MenuDetailScreen extends StatelessWidget {
   final MenuItem? drinkItem;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return DraggableScrollableSheet(
@@ -69,6 +71,11 @@ class MenuDetailScreen extends StatelessWidget {
                         '메뉴 상세',
                         style: theme.textTheme.titleLarge,
                       ),
+                    ),
+                    FavoriteButton(
+                      mainItemId: menuItem.id,
+                      sideItemId: sideItem?.id,
+                      drinkItemId: drinkItem?.id,
                     ),
                   ],
                 ),
