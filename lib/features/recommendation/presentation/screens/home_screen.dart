@@ -16,8 +16,10 @@ class HomeScreen extends ConsumerWidget {
     final budget = ref.watch(budgetStateProvider);
     final franchises = ref.watch(selectedFranchisesProvider);
     final canRecommend = budget != null && franchises.isNotEmpty;
+    final theme = Theme.of(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Burger Budget'),
         actions: [
@@ -40,17 +42,44 @@ class HomeScreen extends ConsumerWidget {
             children: [
               Text(
                 '예산을 입력하고\n프랜차이즈를 선택하세요',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const BudgetInputWidget(),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                '프랜차이즈',
-                style: Theme.of(context).textTheme.titleSmall,
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '예산 설정',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const BudgetInputWidget(),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              const FranchiseChips(),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '프랜차이즈',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const FranchiseChips(),
+                    ],
+                  ),
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
                 onPressed: canRecommend

@@ -16,6 +16,7 @@ class BudgetInputWidget extends ConsumerStatefulWidget {
 class _BudgetInputState extends ConsumerState<BudgetInputWidget> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  String? _warningText;
 
   @override
   void initState() {
@@ -33,25 +34,62 @@ class _BudgetInputState extends ConsumerState<BudgetInputWidget> {
 
   void _onFocusChange() {
     if (!_focusNode.hasFocus) {
-      _formatAndSet();
+      _formatDisplay();
     }
   }
 
-  void _formatAndSet() {
-    final text = _controller.text.replaceAll(',', '');
-    final value = int.tryParse(text);
+  void _onChanged(String text) {
+    final raw = text.replaceAll(',', '');
+    final value = int.tryParse(raw);
+
+    if (raw.isEmpty) {
+      ref.read(budgetStateProvider.notifier).setBudget(null);
+      setState(() => _warningText = null);
+      return;
+    }
+
+    if (value == null) {
+      ref.read(budgetStateProvider.notifier).setBudget(null);
+      setState(() => _warningText = null);
+      return;
+    }
+
+    if (value > AppConstants.maxBudget) {
+      ref.read(budgetStateProvider.notifier).setBudget(null);
+      setState(() {
+        _warningText =
+            '최대 ${formatKRW(AppConstants.maxBudget)}까지 입력 가능합니다';
+      });
+      return;
+    }
+
+    if (value < AppConstants.minBudget) {
+      ref.read(budgetStateProvider.notifier).setBudget(null);
+      setState(() {
+        _warningText =
+            '최소 ${formatKRW(AppConstants.minBudget)} 이상 입력하세요';
+      });
+      return;
+    }
+
+    ref.read(budgetStateProvider.notifier).setBudget(value);
+    setState(() => _warningText = null);
+  }
+
+  void _formatDisplay() {
+    final raw = _controller.text.replaceAll(',', '');
+    final value = int.tryParse(raw);
     if (value != null &&
         value >= AppConstants.minBudget &&
         value <= AppConstants.maxBudget) {
-      ref.read(budgetStateProvider.notifier).setBudget(value);
       _controller.text = formatKRW(value).replaceAll('원', '');
-    } else if (text.isEmpty) {
-      ref.read(budgetStateProvider.notifier).setBudget(null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return TextField(
       controller: _controller,
       focusNode: _focusNode,
@@ -63,12 +101,15 @@ class _BudgetInputState extends ConsumerState<BudgetInputWidget> {
       decoration: InputDecoration(
         labelText: '예산',
         hintText: '예산을 입력하세요',
-        prefixText: '₩ ',
+        prefixText: '\u20a9 ',
         suffixText: '원',
         helperText:
             '${formatKRW(AppConstants.minBudget)} ~ ${formatKRW(AppConstants.maxBudget)}',
+        errorText: _warningText,
+        errorStyle: TextStyle(color: theme.colorScheme.error),
       ),
-      onSubmitted: (_) => _formatAndSet(),
+      onChanged: _onChanged,
+      onSubmitted: (_) => _formatDisplay(),
     );
   }
 }

@@ -30,6 +30,14 @@ class AppConstants {
     'lot',
   ];
 
+  static const Map<String, String> franchiseEmojis = {
+    'mcd': '\u{1F35F}',
+    'bk': '\u{1F354}',
+    'kfc': '\u{1F357}',
+    'mom': '\u{1F414}',
+    'lot': '\u{1F32D}',
+  };
+
   // Google Maps search queries per franchise
   static const Map<String, String> franchiseSearchQueries = {
     'mcd': '맥도날드 근처',
