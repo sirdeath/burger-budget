@@ -44,10 +44,10 @@ void main() {
       expect(find.byType(FranchiseChips), findsOneWidget);
     });
 
-    testWidgets('should have settings icon button', (tester) async {
+    testWidgets('should have search icon button', (tester) async {
       await tester.pumpWidget(createWidget());
 
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
     });
 
     testWidgets('should have recommend button with correct label',

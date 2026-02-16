@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
-import '../../../data_update/presentation/screens/settings_screen.dart';
+import '../../../menu/presentation/screens/menu_search_screen.dart';
 import '../providers/recommendation_provider.dart';
 import '../widgets/budget_input.dart' show BudgetInputWidget;
 import '../widgets/franchise_chips.dart';
@@ -45,11 +45,11 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('Burger Budget'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.search),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => const SettingsScreen(),
+                builder: (_) => const MenuSearchScreen(),
               ),
             ),
           ),
