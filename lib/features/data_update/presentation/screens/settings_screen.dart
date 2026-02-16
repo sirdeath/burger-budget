@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../providers/data_update_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -87,6 +88,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          _ThemeSelector(ref: ref, theme: theme),
+          const SizedBox(height: AppSpacing.md),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -110,6 +113,64 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeSelector extends StatelessWidget {
+  const _ThemeSelector({required this.ref, required this.theme});
+
+  final WidgetRef ref;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '테마 설정',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: Icon(Icons.settings_brightness),
+                    label: Text('시스템'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode),
+                    label: Text('라이트'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode),
+                    label: Text('다크'),
+                  ),
+                ],
+                selected: {themeMode},
+                onSelectionChanged: (selected) {
+                  ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(selected.first);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

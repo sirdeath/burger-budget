@@ -24,19 +24,21 @@ class RecommendationCard extends StatelessWidget {
     final main = recommendation.mainItem;
     final franchiseName =
         AppConstants.franchiseNames[main.franchise] ?? main.franchise;
-    final franchiseColor = AppTheme.franchiseColors[main.franchise];
+    final franchiseColor = AppTheme.franchiseColor(
+      main.franchise,
+      theme.brightness,
+    );
 
     return Card(
       child: InkWell(
         onTap: onTap,
         child: Row(
           children: [
-            if (franchiseColor != null)
-              Container(
-                width: 4,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: franchiseColor,
+            Container(
+              width: 4,
+              height: 100,
+              decoration: BoxDecoration(
+                color: franchiseColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     bottomLeft: Radius.circular(16),

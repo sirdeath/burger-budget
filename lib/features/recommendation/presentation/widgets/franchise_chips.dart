@@ -28,13 +28,16 @@ class FranchiseChips extends ConsumerWidget {
         ),
         ...AppConstants.franchiseCodes.map((code) {
           final name = AppConstants.franchiseNames[code]!;
-          final color = AppTheme.franchiseColors[code];
+          final color = AppTheme.franchiseColor(
+            code,
+            Theme.of(context).brightness,
+          );
           return FilterChip(
             label: Text(name),
             selected: selected.contains(code),
             onSelected: (_) =>
                 ref.read(selectedFranchisesProvider.notifier).toggle(code),
-            selectedColor: color?.withValues(alpha: 0.2),
+            selectedColor: color.withValues(alpha: 0.2),
             checkmarkColor: color,
           );
         }),
