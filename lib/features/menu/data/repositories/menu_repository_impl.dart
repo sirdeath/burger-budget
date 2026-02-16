@@ -48,4 +48,14 @@ class MenuRepositoryImpl implements MenuRepository {
       return Failure('메뉴 상세 조회 실패', e);
     }
   }
+
+  @override
+  Future<Result<List<MenuItem>>> searchMenus(String query) async {
+    try {
+      final items = await _datasource.searchMenus(query);
+      return Success(items);
+    } on Exception catch (e) {
+      return Failure('메뉴 검색 실패', e);
+    }
+  }
 }

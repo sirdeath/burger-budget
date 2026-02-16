@@ -46,4 +46,15 @@ class MenuLocalDatasource {
     if (result.isEmpty) return null;
     return MenuItemModel.fromMap(result.first);
   }
+
+  Future<List<MenuItemModel>> searchMenus(String query) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'menus',
+      where: 'name LIKE ?',
+      whereArgs: ['%$query%'],
+      orderBy: 'franchise, name',
+    );
+    return result.map(MenuItemModel.fromMap).toList();
+  }
 }

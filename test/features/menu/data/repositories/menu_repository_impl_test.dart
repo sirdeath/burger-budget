@@ -113,4 +113,38 @@ void main() {
       expect((result as Failure).message, '메뉴 상세 조회 실패');
     });
   });
+
+  group('searchMenus', () {
+    test('should return Success with matching items', () async {
+      when(() => mockDatasource.searchMenus('빅'))
+          .thenAnswer((_) async => [testItems[0]]);
+
+      final result = await repository.searchMenus('빅');
+
+      expect(result, isA<Success<List<MenuItem>>>());
+      final data = (result as Success<List<MenuItem>>).data;
+      expect(data.length, 1);
+      expect(data[0].name, '빅맥');
+    });
+
+    test('should return Success with empty list when no matches', () async {
+      when(() => mockDatasource.searchMenus('없는메뉴'))
+          .thenAnswer((_) async => []);
+
+      final result = await repository.searchMenus('없는메뉴');
+
+      expect(result, isA<Success<List<MenuItem>>>());
+      expect((result as Success<List<MenuItem>>).data.isEmpty, true);
+    });
+
+    test('should return Failure on exception', () async {
+      when(() => mockDatasource.searchMenus(any()))
+          .thenThrow(Exception('DB error'));
+
+      final result = await repository.searchMenus('빅맥');
+
+      expect(result, isA<Failure<List<MenuItem>>>());
+      expect((result as Failure).message, '메뉴 검색 실패');
+    });
+  });
 }

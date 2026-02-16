@@ -12,4 +12,6 @@ abstract class MenuRepository {
   );
 
   Future<Result<MenuItem>> getMenuById(String id);
+
+  Future<Result<List<MenuItem>>> searchMenus(String query);
 }
