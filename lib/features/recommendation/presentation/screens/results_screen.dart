@@ -78,20 +78,14 @@ class ResultsScreen extends ConsumerWidget {
                 if (recommendations.isEmpty) {
                   return _EmptyView(budget: budget);
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  itemCount: recommendations.length,
-                  itemBuilder: (context, index) {
-                    return RecommendationCard(
-                      recommendation: recommendations[index],
-                      rank: index + 1,
-                      budget: budget,
-                      onTap: () => _showDetail(
-                        context,
-                        recommendations[index],
-                      ),
-                    );
-                  },
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _StaggeredCardList(
+                    key: ValueKey(sortMode),
+                    recommendations: recommendations,
+                    budget: budget,
+                    onTap: (r) => _showDetail(context, r),
+                  ),
                 );
               },
             ),
@@ -110,6 +104,77 @@ class ResultsScreen extends ConsumerWidget {
         sideItem: recommendation.sideItem,
         drinkItem: recommendation.drinkItem,
       ),
+    );
+  }
+}
+
+class _StaggeredCardList extends StatefulWidget {
+  const _StaggeredCardList({
+    super.key,
+    required this.recommendations,
+    required this.budget,
+    required this.onTap,
+  });
+
+  final List<Recommendation> recommendations;
+  final int budget;
+  final void Function(Recommendation) onTap;
+
+  @override
+  State<_StaggeredCardList> createState() => _StaggeredCardListState();
+}
+
+class _StaggeredCardListState extends State<_StaggeredCardList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(
+        milliseconds: 200 + widget.recommendations.length * 100,
+      ),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = widget.recommendations.length;
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      itemCount: count,
+      itemBuilder: (context, index) {
+        final start = (index / count) * 0.6;
+        final end = start + 0.4;
+        final animation = CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end.clamp(0.0, 1.0),
+              curve: Curves.easeOutCubic),
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween(
+              begin: const Offset(0, 0.1),
+              end: Offset.zero,
+            ).animate(animation),
+            child: RecommendationCard(
+              recommendation: widget.recommendations[index],
+              rank: index + 1,
+              budget: widget.budget,
+              onTap: () => widget.onTap(widget.recommendations[index]),
+            ),
+          ),
+        );
+      },
     );
   }
 }

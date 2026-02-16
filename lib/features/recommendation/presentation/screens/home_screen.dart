@@ -8,6 +8,27 @@ import '../widgets/budget_input.dart' show BudgetInputWidget;
 import '../widgets/franchise_chips.dart';
 import 'results_screen.dart';
 
+class _SlideUpRoute extends PageRouteBuilder<void> {
+  _SlideUpRoute({required Widget child})
+      : super(
+          pageBuilder: (_, _, _) => child,
+          transitionsBuilder: (_, animation, _, child) {
+            final tween = Tween(
+              begin: const Offset(0, 0.15),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeOutCubic));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 350),
+        );
+}
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -85,8 +106,8 @@ class HomeScreen extends ConsumerWidget {
                 onPressed: canRecommend
                     ? () => Navigator.push(
                           context,
-                          MaterialPageRoute<void>(
-                            builder: (_) => ResultsScreen(
+                          _SlideUpRoute(
+                            child: ResultsScreen(
                               budget: budget,
                               franchises: franchises.toList(),
                             ),
