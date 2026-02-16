@@ -31,18 +31,21 @@ class HistoryList extends _$HistoryList {
       drinkItemId: drinkItemId,
       totalPrice: totalPrice,
     );
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 
   Future<void> remove(int id) async {
     final repo = ref.read(historyRepositoryProvider);
     await repo.removeHistory(id);
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 
   Future<void> clearAll() async {
     final repo = ref.read(historyRepositoryProvider);
     await repo.clearHistory();
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 }

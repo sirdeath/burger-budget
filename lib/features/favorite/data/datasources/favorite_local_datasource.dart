@@ -59,10 +59,27 @@ class FavoriteLocalDatasource {
     String? drinkItemId,
   }) async {
     final db = await _dbHelper.database;
+    final whereParts = ['main_item_id = ?'];
+    final whereArgs = <Object>[mainItemId];
+
+    if (sideItemId != null) {
+      whereParts.add('side_item_id = ?');
+      whereArgs.add(sideItemId);
+    } else {
+      whereParts.add('side_item_id IS NULL');
+    }
+
+    if (drinkItemId != null) {
+      whereParts.add('drink_item_id = ?');
+      whereArgs.add(drinkItemId);
+    } else {
+      whereParts.add('drink_item_id IS NULL');
+    }
+
     final result = await db.query(
       'favorites',
-      where: 'main_item_id = ? AND side_item_id IS ? AND drink_item_id IS ?',
-      whereArgs: [mainItemId, sideItemId, drinkItemId],
+      where: whereParts.join(' AND '),
+      whereArgs: whereArgs,
       limit: 1,
     );
     return result.isNotEmpty;

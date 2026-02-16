@@ -52,12 +52,14 @@ class FavoriteList extends _$FavoriteList {
         drinkItemId: drinkItemId,
       );
     }
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 
   Future<void> remove(int id) async {
     final repo = ref.read(favoriteRepositoryProvider);
     await repo.removeFavorite(id);
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 }
