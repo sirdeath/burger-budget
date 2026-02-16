@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../../store_finder/presentation/widgets/find_store_button.dart';
 import '../../domain/entities/menu_item.dart';
@@ -29,33 +31,83 @@ class MenuDetailScreen extends StatelessWidget {
       builder: (context, scrollController) {
         return SingleChildScrollView(
           controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
                   child: Container(
-                    width: 40,
+                    width: 48,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                _buildItemSection(context, '메인', menuItem),
-                if (sideItem != null) ...[
-                  const Divider(height: AppSpacing.xl),
-                  _buildItemSection(context, '사이드', sideItem!),
-                ],
-                if (drinkItem != null) ...[
-                  const Divider(height: AppSpacing.xl),
-                  _buildItemSection(context, '음료', drinkItem!),
-                ],
-                const Divider(height: AppSpacing.xl),
-                Row(
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    _FranchiseBadge(
+                      franchise: menuItem.franchise,
+                      brightness: theme.brightness,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        '메뉴 상세',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              // Menu sections
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                ),
+                child: Column(
+                  children: [
+                    _MenuItemCard(
+                      label: '메인',
+                      icon: Icons.lunch_dining,
+                      item: menuItem,
+                    ),
+                    if (sideItem != null)
+                      _MenuItemCard(
+                        label: '사이드',
+                        icon: Icons.fastfood,
+                        item: sideItem!,
+                      ),
+                    if (drinkItem != null)
+                      _MenuItemCard(
+                        label: '음료',
+                        icon: Icons.local_cafe,
+                        item: drinkItem!,
+                      ),
+                  ],
+                ),
+              ),
+              // Total price
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
@@ -73,15 +125,15 @@ class MenuDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Center(
-                  child: FindStoreButton(
-                    franchiseCode: menuItem.franchise,
-                  ),
+              ),
+              // Find store button
+              Center(
+                child: FindStoreButton(
+                  franchiseCode: menuItem.franchise,
                 ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
           ),
         );
       },
@@ -92,19 +144,81 @@ class MenuDetailScreen extends StatelessWidget {
       menuItem.price +
       (sideItem?.price ?? 0) +
       (drinkItem?.price ?? 0);
+}
 
-  Widget _buildItemSection(
-    BuildContext context,
-    String label,
-    MenuItem item,
-  ) {
+class _FranchiseBadge extends StatelessWidget {
+  const _FranchiseBadge({
+    required this.franchise,
+    required this.brightness,
+  });
+
+  final String franchise;
+  final Brightness brightness;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppTheme.franchiseColor(franchise, brightness);
+    final name = AppConstants.franchiseNames[franchise] ?? franchise;
+    final emoji = AppConstants.franchiseEmojis[franchise] ?? '';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        '$emoji $name',
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _MenuItemCard extends StatelessWidget {
+  const _MenuItemCard({
+    required this.label,
+    required this.icon,
+    required this.item,
+  });
+
+  final String label;
+  final IconData icon;
+  final MenuItem item;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Icon placeholder
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,63 +230,95 @@ class MenuDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    item.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        formatKRW(item.price),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      if (item.calories != null)
+                        _InfoChip(
+                          icon: Icons.local_fire_department,
+                          text: '${item.calories} kcal',
+                        ),
+                      if (item.calories != null && item.tags.isNotEmpty)
+                        const SizedBox(width: AppSpacing.xs),
+                      ...item.tags.map(
+                        (tag) => Padding(
+                          padding: const EdgeInsets.only(
+                            right: AppSpacing.xs,
+                          ),
+                          child: _InfoChip(text: tag),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Text(
-              formatKRW(item.price),
-              style: theme.textTheme.titleMedium,
-            ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        if (item.calories != null)
-          _InfoRow(icon: Icons.local_fire_department, text: '${item.calories} kcal'),
-        if (item.tags.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.xs),
-            child: Wrap(
-              spacing: AppSpacing.xs,
-              children: item.tags
-                  .map((tag) => Chip(
-                        label: Text(tag),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        labelStyle: theme.textTheme.labelSmall,
-                      ))
-                  .toList(),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({this.icon, required this.text});
 
-  final IconData icon;
+  final IconData? icon;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.outline),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
         ),
-      ],
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 12,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(width: 2),
+          ],
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
