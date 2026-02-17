@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/share_format.dart';
 import '../../../favorite/presentation/widgets/favorite_button.dart';
 import '../../../history/presentation/providers/history_provider.dart';
 import '../../../store_finder/presentation/widgets/find_store_button.dart';
@@ -72,6 +74,18 @@ class MenuDetailScreen extends ConsumerWidget {
                         '메뉴 상세',
                         style: theme.textTheme.titleLarge,
                       ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        final text = formatComboForShare(
+                          mainItem: menuItem,
+                          sideItem: sideItem,
+                          drinkItem: drinkItem,
+                        );
+                        Share.share(text);
+                      },
+                      icon: const Icon(Icons.share_outlined),
+                      tooltip: '공유',
                     ),
                     FavoriteButton(
                       mainItemId: menuItem.id,

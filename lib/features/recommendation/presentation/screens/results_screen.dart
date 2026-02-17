@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/share_format.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton_card.dart';
@@ -35,6 +37,20 @@ class ResultsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('추천 결과 (${formatKRW(budget)})'),
+        actions: [
+          if (asyncRecommendations.asData?.value.isNotEmpty ?? false)
+            IconButton(
+              onPressed: () {
+                final text = formatResultsForShare(
+                  budget: budget,
+                  recommendations: asyncRecommendations.asData!.value,
+                );
+                Share.share(text);
+              },
+              icon: const Icon(Icons.share_outlined),
+              tooltip: '결과 공유',
+            ),
+        ],
       ),
       body: Column(
         children: [
