@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 import '../providers/data_update_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -107,6 +108,22 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.info_outline,
                     label: '버전',
                     value: '1.0.0',
+                  ),
+                  const Divider(height: 24),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.help_outline),
+                    title: const Text('튜토리얼 다시 보기'),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            const OnboardingScreen(isReplay: true),
+                      ),
+                    ),
                   ),
                 ],
               ),
