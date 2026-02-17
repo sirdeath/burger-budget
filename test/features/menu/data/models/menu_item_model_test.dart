@@ -56,6 +56,7 @@ void main() {
           'side': MenuType.side,
           'drink': MenuType.drink,
           'set': MenuType.set_,
+          'dessert': MenuType.dessert,
         }.entries) {
           final map = Map<String, dynamic>.from(testMap)
             ..['type'] = entry.key;

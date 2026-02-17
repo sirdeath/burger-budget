@@ -2,7 +2,8 @@ enum MenuType {
   burger,
   side,
   drink,
-  set_;
+  set_,
+  dessert;
 
   static MenuType fromString(String value) {
     return switch (value) {
@@ -10,6 +11,7 @@ enum MenuType {
       'side' => MenuType.side,
       'drink' => MenuType.drink,
       'set' => MenuType.set_,
+      'dessert' => MenuType.dessert,
       _ => throw ArgumentError('Unknown MenuType: $value'),
     };
   }

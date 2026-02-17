@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/menu_type_display.dart';
 import '../../../../core/utils/share_format.dart';
 import '../../../favorite/presentation/widgets/favorite_button.dart';
 import '../../../history/presentation/providers/history_provider.dart';
@@ -104,20 +105,20 @@ class MenuDetailScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _MenuItemCard(
-                      label: '메인',
-                      icon: Icons.lunch_dining,
+                      label: MenuTypeDisplay.label(menuItem.type),
+                      icon: MenuTypeDisplay.icon(menuItem.type),
                       item: menuItem,
                     ),
                     if (sideItem != null)
                       _MenuItemCard(
-                        label: '사이드',
-                        icon: Icons.fastfood,
+                        label: MenuTypeDisplay.label(sideItem!.type),
+                        icon: MenuTypeDisplay.icon(sideItem!.type),
                         item: sideItem!,
                       ),
                     if (drinkItem != null)
                       _MenuItemCard(
-                        label: '음료',
-                        icon: Icons.local_cafe,
+                        label: MenuTypeDisplay.label(drinkItem!.type),
+                        icon: MenuTypeDisplay.icon(drinkItem!.type),
                         item: drinkItem!,
                       ),
                   ],

@@ -5,6 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../domain/entities/menu_item.dart';
@@ -241,23 +242,9 @@ class _MenuSearchResultCard extends StatelessWidget {
     );
   }
 
-  IconData _getMenuIcon(MenuType type) {
-    return switch (type) {
-      MenuType.burger => Icons.lunch_dining,
-      MenuType.side => Icons.fastfood,
-      MenuType.drink => Icons.local_cafe,
-      MenuType.set_ => Icons.restaurant_menu,
-    };
-  }
+  IconData _getMenuIcon(MenuType type) => MenuTypeDisplay.icon(type);
 
-  String _getTypeLabel(MenuType type) {
-    return switch (type) {
-      MenuType.burger => '버거',
-      MenuType.side => '사이드',
-      MenuType.drink => '음료',
-      MenuType.set_ => '세트',
-    };
-  }
+  String _getTypeLabel(MenuType type) => MenuTypeDisplay.label(type);
 }
 
 class _FranchiseBadge extends StatelessWidget {
