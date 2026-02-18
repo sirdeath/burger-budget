@@ -1,7 +1,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Burger Budget';
+  static const String appName = '버짓';
 
   // DB
   static const String seedDbAssetPath = 'assets/menu_seed.db';

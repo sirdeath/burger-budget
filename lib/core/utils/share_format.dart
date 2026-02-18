@@ -38,7 +38,7 @@ String formatComboForShare({
     buffer.writeln('🔥 총 칼로리: $totalCalories kcal');
   }
 
-  buffer.write('\n#BurgerBudget');
+  buffer.write('\n#버짓');
   return buffer.toString();
 }
 
@@ -49,7 +49,7 @@ String formatResultsForShare({
 }) {
   final buffer = StringBuffer();
 
-  buffer.writeln('🍔 Burger Budget 추천 결과');
+  buffer.writeln('🍔 버짓 추천 결과');
   buffer.writeln('💰 예산: ${formatKRW(budget)}');
   buffer.writeln();
 
@@ -69,7 +69,7 @@ String formatResultsForShare({
     );
   }
 
-  buffer.write('\n#BurgerBudget');
+  buffer.write('\n#버짓');
   return buffer.toString();
 }
 

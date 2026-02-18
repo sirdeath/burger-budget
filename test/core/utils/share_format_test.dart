@@ -56,7 +56,7 @@ void main() {
       expect(result, contains('🥤 음료: 코카콜라 (M) - 1,500원'));
       expect(result, contains('💰 총 가격: 9,000원'));
       expect(result, contains('🔥 총 칼로리: 1030 kcal'));
-      expect(result, contains('#BurgerBudget'));
+      expect(result, contains('#버짓'));
     });
 
     test('메인만 있는 경우 사이드/음료를 생략한다', () {
@@ -99,7 +99,7 @@ void main() {
         recommendations: recommendations,
       );
 
-      expect(result, contains('🍔 Burger Budget 추천 결과'));
+      expect(result, contains('🍔 버짓 추천 결과'));
       expect(result, contains('💰 예산: 10,000원'));
       expect(
         result,
@@ -111,7 +111,7 @@ void main() {
         result,
         contains('2. [Burger King] 와퍼 (6,500원)'),
       );
-      expect(result, contains('#BurgerBudget'));
+      expect(result, contains('#버짓'));
     });
 
     test('빈 추천 결과도 헤더를 포함한다', () {
@@ -120,9 +120,9 @@ void main() {
         recommendations: [],
       );
 
-      expect(result, contains('🍔 Burger Budget 추천 결과'));
+      expect(result, contains('🍔 버짓 추천 결과'));
       expect(result, contains('💰 예산: 5,000원'));
-      expect(result, contains('#BurgerBudget'));
+      expect(result, contains('#버짓'));
     });
   });
 }

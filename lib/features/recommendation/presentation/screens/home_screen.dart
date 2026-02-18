@@ -42,7 +42,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Burger Budget'),
+        title: const Text('버짓'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
