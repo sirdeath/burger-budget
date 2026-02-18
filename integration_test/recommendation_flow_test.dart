@@ -15,7 +15,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 1. HomeScreen 표시 확인
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
       expect(
         find.text('예산을 입력하고\n프랜차이즈를 선택하세요'),
         findsOneWidget,
@@ -89,7 +89,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // HomeScreen 복귀 확인
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
     });
   });
 }

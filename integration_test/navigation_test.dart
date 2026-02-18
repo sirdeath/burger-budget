@@ -13,7 +13,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 1. 홈 탭 (기본)
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
 
       // 2. 즐겨찾기 탭
       await tester.tap(find.text('즐겨찾기'));
@@ -33,7 +33,7 @@ void main() {
       // 5. 홈으로 복귀
       await tester.tap(find.text('홈'));
       await tester.pumpAndSettle();
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
     });
 
     testWidgets('검색 아이콘으로 검색 화면 진입/복귀', (tester) async {
@@ -61,7 +61,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // HomeScreen 복귀
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
     });
   });
 }

@@ -28,7 +28,7 @@ void main() {
     testWidgets('should display app title and guidance text', (tester) async {
       await tester.pumpWidget(createWidget());
 
-      expect(find.text('버짓'), findsOneWidget);
+      expect(find.text('buzit'), findsOneWidget);
       expect(
         find.text('예산을 입력하고\n프랜차이즈를 선택하세요'),
         findsOneWidget,

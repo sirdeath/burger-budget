@@ -47,7 +47,7 @@ void main(List<String> args) {
 
   final manifestFile = File('gh-pages/manifest.json');
   manifestFile.writeAsStringSync(
-    const JsonEncoder.withIndent('  ').convert(manifest) + '\n',
+    '${const JsonEncoder.withIndent('  ').convert(manifest)}\n',
   );
   print('Generated: ${manifestFile.path}');
   print('  version: $version');
