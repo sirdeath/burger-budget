@@ -73,7 +73,7 @@ class FavoriteButton extends ConsumerWidget {
   }
 }
 
-class _FavoriteIconButton extends StatelessWidget {
+class _FavoriteIconButton extends StatefulWidget {
   const _FavoriteIconButton({
     required this.isFavorite,
     required this.onPressed,
@@ -83,17 +83,61 @@ class _FavoriteIconButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
+  State<_FavoriteIconButton> createState() => _FavoriteIconButtonState();
+}
+
+class _FavoriteIconButtonState extends State<_FavoriteIconButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bounceController;
+  late final Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _bounceAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 50),
+    ]).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void didUpdateWidget(_FavoriteIconButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isFavorite != widget.isFavorite && widget.isFavorite) {
+      _bounceController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return IconButton(
-      onPressed: onPressed,
-      icon: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: Icon(
-          isFavorite ? Icons.favorite : Icons.favorite_border,
-          key: ValueKey(isFavorite),
-          color: isFavorite ? Colors.red : theme.colorScheme.onSurface,
+      onPressed: widget.onPressed,
+      icon: ScaleTransition(
+        scale: _bounceAnimation,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            widget.isFavorite ? Icons.favorite : Icons.favorite_border,
+            key: ValueKey(widget.isFavorite),
+            color: widget.isFavorite
+                ? Colors.red
+                : theme.colorScheme.onSurface,
+          ),
         ),
       ),
     );

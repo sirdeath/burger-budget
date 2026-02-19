@@ -42,9 +42,23 @@ class FavoritesScreen extends ConsumerWidget {
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final favorite = favorites[index];
-              return _FavoriteCard(
-                favorite: favorite,
-                onDelete: () async {
+              return Dismissible(
+                key: ValueKey(favorite.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppSpacing.lg),
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.delete,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+                onDismissed: (_) async {
                   await ref
                       .read(favoriteListProvider.notifier)
                       .remove(favorite.id);
@@ -57,6 +71,22 @@ class FavoritesScreen extends ConsumerWidget {
                     );
                   }
                 },
+                child: _FavoriteCard(
+                  favorite: favorite,
+                  onDelete: () async {
+                    await ref
+                        .read(favoriteListProvider.notifier)
+                        .remove(favorite.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('즐겨찾기에서 제거했습니다'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
               );
             },
           );

@@ -62,9 +62,24 @@ class HistoryScreen extends ConsumerWidget {
                 );
               }
               final order = history[index - 1];
-              return _HistoryCard(
-                order: order,
-                onDelete: () async {
+              return Dismissible(
+                key: ValueKey(order.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppSpacing.lg),
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.delete,
+                    color:
+                        Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+                onDismissed: (_) async {
                   await ref
                       .read(historyListProvider.notifier)
                       .remove(order.id);
@@ -77,6 +92,22 @@ class HistoryScreen extends ConsumerWidget {
                     );
                   }
                 },
+                child: _HistoryCard(
+                  order: order,
+                  onDelete: () async {
+                    await ref
+                        .read(historyListProvider.notifier)
+                        .remove(order.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('주문 이력에서 삭제했습니다'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
               );
             },
           );

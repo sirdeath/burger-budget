@@ -137,10 +137,19 @@ class RecommendationCard extends StatelessWidget {
                               ),
                               if (budget != null) ...[
                                 const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  '(잔액 ${formatKRW(budget! - recommendation.totalPrice)})',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.outline,
+                                TweenAnimationBuilder<int>(
+                                  tween: IntTween(
+                                    begin: 0,
+                                    end: budget! - recommendation.totalPrice,
+                                  ),
+                                  duration: const Duration(milliseconds: 600),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, value, _) => Text(
+                                    '(잔액 ${formatKRW(value)})',
+                                    style:
+                                        theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.outline,
+                                    ),
                                   ),
                                 ),
                               ],

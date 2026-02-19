@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data_update/presentation/screens/settings_screen.dart';
@@ -27,6 +28,7 @@ class AppShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
+          HapticFeedback.selectionClick();
           ref.read(navigationIndexProvider.notifier).setIndex(index);
         },
         destinations: const [

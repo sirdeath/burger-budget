@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
@@ -111,20 +112,28 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              FilledButton.icon(
-                onPressed: canRecommend
-                    ? () => Navigator.push(
-                          context,
-                          _SlideUpRoute(
-                            child: ResultsScreen(
-                              budget: budget,
-                              franchises: franchises.toList(),
+              AnimatedScale(
+                scale: canRecommend ? 1.0 : 0.95,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: FilledButton.icon(
+                  onPressed: canRecommend
+                      ? () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.push(
+                            context,
+                            _SlideUpRoute(
+                              child: ResultsScreen(
+                                budget: budget,
+                                franchises: franchises.toList(),
+                              ),
                             ),
-                          ),
-                        )
-                    : null,
-                icon: const Icon(Icons.restaurant_menu),
-                label: const Text('추천받기'),
+                          );
+                        }
+                      : null,
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: const Text('추천받기'),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
             ],
