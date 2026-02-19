@@ -50,6 +50,7 @@ class _MenuSearchScreenState extends ConsumerState<MenuSearchScreen> {
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: '검색어 지우기',
                         onPressed: () {
                           _searchController.clear();
                           ref

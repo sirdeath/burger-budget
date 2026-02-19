@@ -33,7 +33,16 @@ class RecommendationCard extends StatelessWidget {
       theme.brightness,
     );
 
-    return Card(
+    final remaining = budget != null ? budget! - recommendation.totalPrice : 0;
+    final semanticLabel = '$rank위 ${main.name}, '
+        '$franchiseName, '
+        '${formatKRW(recommendation.totalPrice)}'
+        '${budget != null ? ', 잔액 ${formatKRW(remaining)}' : ''}';
+
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      child: Card(
       shape: _isTop
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -165,6 +174,7 @@ class RecommendationCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

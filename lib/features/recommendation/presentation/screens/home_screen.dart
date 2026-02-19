@@ -47,6 +47,7 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
+            tooltip: '메뉴 검색',
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(

@@ -181,6 +181,7 @@ class _FavoriteCard extends StatelessWidget {
             // Delete button
             IconButton(
               onPressed: onDelete,
+              tooltip: '삭제',
               icon: Icon(
                 Icons.delete_outline,
                 color: theme.colorScheme.error,

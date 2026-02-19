@@ -127,6 +127,7 @@ class _FavoriteIconButtonState extends State<_FavoriteIconButton>
 
     return IconButton(
       onPressed: widget.onPressed,
+      tooltip: widget.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가',
       icon: ScaleTransition(
         scale: _bounceAnimation,
         child: AnimatedSwitcher(

@@ -23,6 +23,7 @@ class HistoryScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep),
+            tooltip: '전체 삭제',
             onPressed: () => _showClearAllDialog(context, ref),
           ),
         ],
@@ -320,6 +321,7 @@ class _HistoryCard extends StatelessWidget {
             // Delete button
             IconButton(
               onPressed: onDelete,
+              tooltip: '삭제',
               icon: Icon(
                 Icons.delete_outline,
                 color: theme.colorScheme.error,
