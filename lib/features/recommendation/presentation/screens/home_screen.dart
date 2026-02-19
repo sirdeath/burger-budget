@@ -35,9 +35,12 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final budget = ref.watch(budgetStateProvider);
-    final franchises = ref.watch(selectedFranchisesProvider);
-    final canRecommend = budget != null && franchises.isNotEmpty;
+    final hasBudget =
+        ref.watch(budgetStateProvider.select((b) => b != null));
+    final hasFranchises = ref.watch(
+      selectedFranchisesProvider.select((f) => f.isNotEmpty),
+    );
+    final canRecommend = hasBudget && hasFranchises;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -121,12 +124,15 @@ class HomeScreen extends ConsumerWidget {
                   onPressed: canRecommend
                       ? () {
                           HapticFeedback.mediumImpact();
+                          final budget = ref.read(budgetStateProvider)!;
+                          final franchises =
+                              ref.read(selectedFranchisesProvider).toList();
                           Navigator.push(
                             context,
                             _SlideUpRoute(
                               child: ResultsScreen(
                                 budget: budget,
-                                franchises: franchises.toList(),
+                                franchises: franchises,
                               ),
                             ),
                           );

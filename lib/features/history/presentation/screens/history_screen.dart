@@ -57,13 +57,16 @@ class HistoryScreen extends ConsumerWidget {
             itemCount: history.length + 1, // +1 for stats card
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _StatsCard(
-                  totalOrders: totalOrders,
-                  totalSpent: totalSpent,
+                return RepaintBoundary(
+                  child: _StatsCard(
+                    totalOrders: totalOrders,
+                    totalSpent: totalSpent,
+                  ),
                 );
               }
               final order = history[index - 1];
-              return Dismissible(
+              return RepaintBoundary(
+                child: Dismissible(
                 key: ValueKey(order.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
@@ -109,6 +112,7 @@ class HistoryScreen extends ConsumerWidget {
                     }
                   },
                 ),
+              ),
               );
             },
           );

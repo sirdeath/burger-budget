@@ -225,6 +225,10 @@ def generate_db():
         CREATE INDEX idx_menus_price ON menus(price)
     ''')
 
+    cursor.execute('''
+        CREATE INDEX idx_menus_name ON menus(name)
+    ''')
+
     cursor.executemany(
         'INSERT INTO menus (id, franchise, name, type, price, calories, imageUrl, tags) '
         'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',

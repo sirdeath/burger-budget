@@ -190,18 +190,20 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
           curve: Interval(start, end.clamp(0.0, 1.0),
               curve: Curves.easeOutCubic),
         );
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0, 0.1),
-              end: Offset.zero,
-            ).animate(animation),
-            child: RecommendationCard(
-              recommendation: widget.recommendations[index],
-              rank: index + 1,
-              budget: widget.budget,
-              onTap: () => widget.onTap(widget.recommendations[index]),
+        return RepaintBoundary(
+          child: FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0, 0.1),
+                end: Offset.zero,
+              ).animate(animation),
+              child: RecommendationCard(
+                recommendation: widget.recommendations[index],
+                rank: index + 1,
+                budget: widget.budget,
+                onTap: () => widget.onTap(widget.recommendations[index]),
+              ),
             ),
           ),
         );

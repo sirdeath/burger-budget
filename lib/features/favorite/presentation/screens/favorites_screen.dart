@@ -42,7 +42,8 @@ class FavoritesScreen extends ConsumerWidget {
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final favorite = favorites[index];
-              return Dismissible(
+              return RepaintBoundary(
+                child: Dismissible(
                 key: ValueKey(favorite.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
@@ -87,6 +88,7 @@ class FavoritesScreen extends ConsumerWidget {
                     }
                   },
                 ),
+              ),
               );
             },
           );

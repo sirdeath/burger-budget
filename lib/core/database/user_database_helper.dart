@@ -19,7 +19,7 @@ class UserDatabaseHelper {
     final path = p.join(dir.path, 'user_data.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -46,6 +46,18 @@ class UserDatabaseHelper {
         created_at TEXT NOT NULL
       )
     ''');
+    await _createIndexes(db);
+  }
+
+  Future<void> _createIndexes(Database db) async {
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_favorites_main '
+      'ON favorites(main_item_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_history_created '
+      'ON order_history(created_at DESC)',
+    );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -60,6 +72,9 @@ class UserDatabaseHelper {
           created_at TEXT NOT NULL
         )
       ''');
+    }
+    if (oldVersion < 3) {
+      await _createIndexes(db);
     }
   }
 
