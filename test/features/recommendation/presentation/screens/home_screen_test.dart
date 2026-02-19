@@ -1,3 +1,4 @@
+import 'package:burger_budget/core/constants/app_constants.dart';
 import 'package:burger_budget/features/recommendation/presentation/screens/home_screen.dart';
 import 'package:burger_budget/features/recommendation/presentation/widgets/budget_input.dart';
 import 'package:burger_budget/features/recommendation/presentation/widgets/franchise_chips.dart';
@@ -12,6 +13,14 @@ final _filledButtonFinder =
 
 Widget _filledButtonWidget(WidgetTester tester) =>
     tester.widget(_filledButtonFinder);
+
+final _mcFinder = find.text("McDonald's");
+
+/// Scroll to McDonald's chip before tapping (budget presets push it off-screen).
+Future<void> _scrollToMcDonalds(WidgetTester tester) async {
+  await tester.ensureVisible(_mcFinder);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   Widget createWidget() {
@@ -71,7 +80,8 @@ void main() {
         (tester) async {
       await tester.pumpWidget(createWidget());
 
-      await tester.tap(find.text("McDonald's"));
+      await _scrollToMcDonalds(tester);
+      await tester.tap(_mcFinder);
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
@@ -100,7 +110,8 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
 
-      await tester.tap(find.text("McDonald's"));
+      await _scrollToMcDonalds(tester);
+      await tester.tap(_mcFinder);
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
@@ -116,13 +127,50 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
 
-      await tester.tap(find.text("McDonald's"));
+      await _scrollToMcDonalds(tester);
+      await tester.tap(_mcFinder);
       await tester.pump();
-      await tester.tap(find.text("McDonald's"));
+      await tester.tap(_mcFinder);
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
       expect(button.onPressed, isNull);
+    });
+
+    testWidgets('should display budget preset chips', (tester) async {
+      await tester.pumpWidget(createWidget());
+
+      expect(find.text('5천'), findsOneWidget);
+      expect(find.text('8천'), findsOneWidget);
+      expect(find.text('1만'), findsOneWidget);
+      expect(find.text('1.5만'), findsOneWidget);
+      expect(find.text('2만'), findsOneWidget);
+      expect(
+        find.byType(ChoiceChip),
+        findsNWidgets(AppConstants.budgetPresets.length),
+      );
+    });
+
+    testWidgets('should display budget slider', (tester) async {
+      await tester.pumpWidget(createWidget());
+
+      expect(find.byType(Slider), findsOneWidget);
+    });
+
+    testWidgets(
+        'preset tap then franchise select should enable recommend button',
+        (tester) async {
+      await tester.pumpWidget(createWidget());
+
+      await tester.tap(find.text('1만'));
+      await tester.pump();
+
+      await _scrollToMcDonalds(tester);
+      await tester.tap(_mcFinder);
+      await tester.pump();
+
+      final button = _filledButtonWidget(tester) as FilledButton;
+      expect(button.onPressed, isNotNull);
     });
   });
 }

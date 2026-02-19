@@ -61,47 +61,56 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                '예산을 입력하고\n프랜차이즈를 선택하세요',
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+              Expanded(
+                child: SingleChildScrollView(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        '예산 설정',
-                        style: theme.textTheme.titleSmall,
+                        '예산을 입력하고\n프랜차이즈를 선택하세요',
+                        style: theme.textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      const BudgetInputWidget(),
+                      const SizedBox(height: AppSpacing.lg),
+                      Card(
+                        margin: EdgeInsets.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '예산 설정',
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              const BudgetInputWidget(),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Card(
+                        margin: EdgeInsets.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '프랜차이즈',
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              const FranchiseChips(),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '프랜차이즈',
-                        style: theme.textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      const FranchiseChips(),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
               FilledButton.icon(
                 onPressed: canRecommend
                     ? () => Navigator.push(
