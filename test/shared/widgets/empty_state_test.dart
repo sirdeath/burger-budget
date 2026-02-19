@@ -85,8 +85,8 @@ void main() {
       );
 
       expect(find.text('돌아가기'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
-      expect(find.byType(OutlinedButton), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
+      expect(find.byWidgetPredicate((w) => w is FilledButton), findsOneWidget);
     });
 
     testWidgets('should not display action button when label is null',
@@ -99,8 +99,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byIcon(Icons.arrow_back), findsNothing);
+      expect(find.byWidgetPredicate((w) => w is FilledButton), findsNothing);
+      expect(find.byIcon(Icons.arrow_forward), findsNothing);
     });
 
     testWidgets('should not display action button when callback is null',
@@ -113,8 +113,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byIcon(Icons.arrow_back), findsNothing);
+      expect(find.byWidgetPredicate((w) => w is FilledButton), findsNothing);
+      expect(find.byIcon(Icons.arrow_forward), findsNothing);
     });
 
     testWidgets('should call onAction when action button is tapped',
@@ -152,7 +152,7 @@ void main() {
       expect(find.text('비어있음'), findsOneWidget);
       expect(find.text('항목이 하나도 없습니다'), findsOneWidget);
       expect(find.text('추가하기'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
     });
 
     testWidgets('should display elements in correct vertical order',

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../app_shell/presentation/providers/navigation_provider.dart';
 import '../../domain/entities/favorite.dart';
 import '../providers/favorite_provider.dart';
 
@@ -22,10 +23,17 @@ class FavoritesScreen extends ConsumerWidget {
       body: favoritesAsync.when(
         data: (favorites) {
           if (favorites.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.favorite_border,
               title: '즐겨찾기가 비어있습니다',
-              description: '메뉴 상세에서 하트를 눌러 추가하세요.',
+              description: '추천 결과에서 마음에 드는 조합을\n즐겨찾기에 추가해보세요.',
+              actionLabel: '추천받으러 가기',
+              actionIcon: Icons.restaurant_menu,
+              onAction: () {
+                ref
+                    .read(navigationIndexProvider.notifier)
+                    .setIndex(0);
+              },
             );
           }
 

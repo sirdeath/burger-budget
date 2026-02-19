@@ -9,6 +9,7 @@ class EmptyState extends StatelessWidget {
     required this.title,
     this.description,
     this.actionLabel,
+    this.actionIcon,
     this.onAction,
   });
 
@@ -16,6 +17,7 @@ class EmptyState extends StatelessWidget {
   final String title;
   final String? description;
   final String? actionLabel;
+  final IconData? actionIcon;
   final VoidCallback? onAction;
 
   @override
@@ -50,9 +52,9 @@ class EmptyState extends StatelessWidget {
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSpacing.lg),
-              OutlinedButton.icon(
+              FilledButton.icon(
                 onPressed: onAction,
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(actionIcon ?? Icons.arrow_forward),
                 label: Text(actionLabel!),
               ),
             ],

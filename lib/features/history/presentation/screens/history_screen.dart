@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../app_shell/presentation/providers/navigation_provider.dart';
 import '../../domain/entities/order_history.dart';
 import '../providers/history_provider.dart';
 
@@ -29,10 +30,17 @@ class HistoryScreen extends ConsumerWidget {
       body: historyAsync.when(
         data: (history) {
           if (history.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.receipt_long,
               title: '주문 이력이 없습니다',
-              description: '추천 결과에서 조합을 선택하면 이력에 기록됩니다.',
+              description: '추천 결과에서 조합을 선택하면\n이력에 자동으로 기록됩니다.',
+              actionLabel: '첫 추천 시작하기',
+              actionIcon: Icons.restaurant_menu,
+              onAction: () {
+                ref
+                    .read(navigationIndexProvider.notifier)
+                    .setIndex(0);
+              },
             );
           }
 

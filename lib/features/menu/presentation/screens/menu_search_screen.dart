@@ -77,10 +77,13 @@ class _MenuSearchScreenState extends ConsumerState<MenuSearchScreen> {
                 }
 
                 if (results.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.search_off,
-                    title: '검색 결과가 없습니다',
-                    description: '다른 검색어로 시도해보세요',
+                  return _NoResultsView(
+                    onSuggestionTap: (query) {
+                      _searchController.text = query;
+                      ref
+                          .read(menuSearchQueryProvider.notifier)
+                          .update(query);
+                    },
                   );
                 }
 
@@ -245,6 +248,68 @@ class _MenuSearchResultCard extends StatelessWidget {
   IconData _getMenuIcon(MenuType type) => MenuTypeDisplay.icon(type);
 
   String _getTypeLabel(MenuType type) => MenuTypeDisplay.label(type);
+}
+
+class _NoResultsView extends StatelessWidget {
+  const _NoResultsView({required this.onSuggestionTap});
+
+  final ValueChanged<String> onSuggestionTap;
+
+  static const _suggestions = [
+    '빅맥',
+    '와퍼',
+    '치킨',
+    '불고기',
+    '너겟',
+    '콜라',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 80,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '검색 결과가 없습니다',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '이런 메뉴는 어떠세요?',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              alignment: WrapAlignment.center,
+              children: _suggestions
+                  .map(
+                    (s) => ActionChip(
+                      label: Text(s),
+                      onPressed: () => onSuggestionTap(s),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _FranchiseBadge extends StatelessWidget {
