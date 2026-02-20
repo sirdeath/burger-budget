@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../app_shell/presentation/providers/navigation_provider.dart';
-import '../../domain/entities/favorite.dart';
+import '../../domain/entities/rich_favorite.dart';
 import '../providers/favorite_provider.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -14,7 +17,7 @@ class FavoritesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final favoritesAsync = ref.watch(favoriteListProvider);
+    final favoritesAsync = ref.watch(richFavoriteListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -72,7 +75,7 @@ class FavoritesScreen extends ConsumerWidget {
                     );
                   }
                 },
-                child: _FavoriteCard(
+                child: _RichFavoriteCard(
                   favorite: favorite,
                   onDelete: () async {
                     await ref
@@ -98,26 +101,28 @@ class FavoritesScreen extends ConsumerWidget {
         ),
         error: (error, _) => ErrorView(
           message: error.toString(),
-          onRetry: () => ref.invalidate(favoriteListProvider),
+          onRetry: () => ref.invalidate(richFavoriteListProvider),
         ),
       ),
     );
   }
 }
 
-class _FavoriteCard extends StatelessWidget {
-  const _FavoriteCard({
+class _RichFavoriteCard extends StatelessWidget {
+  const _RichFavoriteCard({
     required this.favorite,
     required this.onDelete,
   });
 
-  final Favorite favorite;
+  final RichFavorite favorite;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+    final franchise = AppConstants.franchiseNames[
+        favorite.mainItem.franchise] ?? favorite.mainItem.franchise;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -126,7 +131,7 @@ class _FavoriteCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Favorite icon
+            // Favorite icon with franchise emoji
             Container(
               width: 48,
               height: 48,
@@ -134,9 +139,12 @@ class _FavoriteCard extends StatelessWidget {
                 color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.favorite,
-                color: Colors.red,
+              child: Center(
+                child: Text(
+                  AppConstants.franchiseEmojis[
+                      favorite.mainItem.franchise] ?? '🍔',
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -145,37 +153,72 @@ class _FavoriteCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _formatItemName(favorite.mainItemId),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          favorite.mainItem.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                        size: 16,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  if (favorite.sideItemId != null) ...[
-                    Text(
-                      '사이드: ${_formatItemName(favorite.sideItemId!)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
-                  if (favorite.drinkItemId != null) ...[
-                    Text(
-                      '음료: ${_formatItemName(favorite.drinkItemId!)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 2),
                   Text(
-                    dateFormat.format(favorite.createdAt),
+                    franchise,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.outline,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  if (favorite.sideItem != null) ...[
+                    _ItemRow(
+                      icon: MenuTypeDisplay.icon(
+                        favorite.sideItem!.type,
+                      ),
+                      label: favorite.sideItem!.name,
+                      price: favorite.sideItem!.price,
+                      theme: theme,
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  if (favorite.drinkItem != null) ...[
+                    _ItemRow(
+                      icon: MenuTypeDisplay.icon(
+                        favorite.drinkItem!.type,
+                      ),
+                      label: favorite.drinkItem!.name,
+                      price: favorite.drinkItem!.price,
+                      theme: theme,
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      Text(
+                        formatKRW(favorite.totalPrice),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        dateFormat.format(favorite.createdAt),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -194,19 +237,43 @@ class _FavoriteCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatItemName(String itemId) {
-    // Convert ID like "mcd_bigmac" to "BigMac"
-    // or "bk_whopper_jr" to "Whopper Jr"
-    final parts = itemId.split('_');
-    if (parts.length > 1) {
-      return parts
-          .skip(1)
-          .map(
-            (part) => part[0].toUpperCase() + part.substring(1),
-          )
-          .join(' ');
-    }
-    return itemId;
+class _ItemRow extends StatelessWidget {
+  const _ItemRow({
+    required this.icon,
+    required this.label,
+    required this.price,
+    required this.theme,
+  });
+
+  final IconData icon;
+  final String label;
+  final int price;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: theme.colorScheme.outline),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          formatKRW(price),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
+        ),
+      ],
+    );
   }
 }

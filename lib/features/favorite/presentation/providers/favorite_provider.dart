@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/result.dart';
 import '../../domain/entities/favorite.dart';
+import '../../domain/entities/rich_favorite.dart';
 
 part 'favorite_provider.g.dart';
 
@@ -62,6 +63,44 @@ class FavoriteList extends _$FavoriteList {
     if (!ref.mounted) return;
     ref.invalidateSelf();
   }
+}
+
+@riverpod
+Future<List<RichFavorite>> richFavoriteList(Ref ref) async {
+  final favorites = await ref.watch(favoriteListProvider.future);
+  final menuRepo = ref.watch(menuRepositoryProvider);
+
+  final results = <RichFavorite>[];
+  for (final favorite in favorites) {
+    final mainResult = await menuRepo.getMenuById(favorite.mainItemId);
+    final mainItem = switch (mainResult) {
+      Success(:final data) => data,
+      Failure() => null,
+    };
+    if (mainItem == null) continue;
+
+    final sideItem = favorite.sideItemId != null
+        ? switch (await menuRepo.getMenuById(favorite.sideItemId!)) {
+            Success(:final data) => data,
+            Failure() => null,
+          }
+        : null;
+
+    final drinkItem = favorite.drinkItemId != null
+        ? switch (await menuRepo.getMenuById(favorite.drinkItemId!)) {
+            Success(:final data) => data,
+            Failure() => null,
+          }
+        : null;
+
+    results.add(RichFavorite(
+      favorite: favorite,
+      mainItem: mainItem,
+      sideItem: sideItem,
+      drinkItem: drinkItem,
+    ));
+  }
+  return results;
 }
 
 @riverpod

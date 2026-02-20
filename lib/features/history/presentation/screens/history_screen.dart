@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/currency_format.dart';
+import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../app_shell/presentation/providers/navigation_provider.dart';
-import '../../domain/entities/order_history.dart';
+import '../../domain/entities/rich_order_history.dart';
 import '../providers/history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -15,7 +17,7 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(historyListProvider);
+    final historyAsync = ref.watch(richHistoryListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -96,7 +98,7 @@ class HistoryScreen extends ConsumerWidget {
                     );
                   }
                 },
-                child: _HistoryCard(
+                child: _RichHistoryCard(
                   order: order,
                   onDelete: () async {
                     await ref
@@ -122,13 +124,16 @@ class HistoryScreen extends ConsumerWidget {
         ),
         error: (error, _) => ErrorView(
           message: error.toString(),
-          onRetry: () => ref.invalidate(historyListProvider),
+          onRetry: () => ref.invalidate(richHistoryListProvider),
         ),
       ),
     );
   }
 
-  Future<void> _showClearAllDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showClearAllDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -235,19 +240,21 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({
+class _RichHistoryCard extends StatelessWidget {
+  const _RichHistoryCard({
     required this.order,
     required this.onDelete,
   });
 
-  final OrderHistory order;
+  final RichOrderHistory order;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+    final franchise = AppConstants.franchiseNames[
+        order.mainItem.franchise] ?? order.mainItem.franchise;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -256,7 +263,7 @@ class _HistoryCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon placeholder
+            // Franchise icon
             Container(
               width: 48,
               height: 48,
@@ -264,9 +271,12 @@ class _HistoryCard extends StatelessWidget {
                 color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.receipt,
-                color: theme.colorScheme.onPrimaryContainer,
+              child: Center(
+                child: Text(
+                  AppConstants.franchiseEmojis[
+                      order.mainItem.franchise] ?? '🍔',
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -276,27 +286,38 @@ class _HistoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _formatItemName(order.mainItemId),
+                    order.mainItem.name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    franchise,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
-                  if (order.sideItemId != null) ...[
-                    Text(
-                      '사이드: ${_formatItemName(order.sideItemId!)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                  if (order.sideItem != null) ...[
+                    _ItemRow(
+                      icon: MenuTypeDisplay.icon(
+                        order.sideItem!.type,
                       ),
+                      label: order.sideItem!.name,
+                      price: order.sideItem!.price,
+                      theme: theme,
                     ),
                     const SizedBox(height: 2),
                   ],
-                  if (order.drinkItemId != null) ...[
-                    Text(
-                      '음료: ${_formatItemName(order.drinkItemId!)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                  if (order.drinkItem != null) ...[
+                    _ItemRow(
+                      icon: MenuTypeDisplay.icon(
+                        order.drinkItem!.type,
                       ),
+                      label: order.drinkItem!.name,
+                      price: order.drinkItem!.price,
+                      theme: theme,
                     ),
                     const SizedBox(height: 2),
                   ],
@@ -336,19 +357,43 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatItemName(String itemId) {
-    // Convert ID like "mcd_bigmac" to "BigMac"
-    // or "bk_whopper_jr" to "Whopper Jr"
-    final parts = itemId.split('_');
-    if (parts.length > 1) {
-      return parts
-          .skip(1)
-          .map(
-            (part) => part[0].toUpperCase() + part.substring(1),
-          )
-          .join(' ');
-    }
-    return itemId;
+class _ItemRow extends StatelessWidget {
+  const _ItemRow({
+    required this.icon,
+    required this.label,
+    required this.price,
+    required this.theme,
+  });
+
+  final IconData icon;
+  final String label;
+  final int price;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: theme.colorScheme.outline),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          formatKRW(price),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
+        ),
+      ],
+    );
   }
 }
