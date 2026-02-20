@@ -165,6 +165,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                     height: AppSpacing.sm,
                                   ),
                                   const BudgetInputWidget(),
+                                  const SizedBox(
+                                    height: AppSpacing.md,
+                                  ),
+                                  const _PersonCountSelector(),
                                 ],
                               ),
                             ),
@@ -222,12 +226,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               final franchises = ref
                                   .read(selectedFranchisesProvider)
                                   .toList();
+                              final personCount = ref
+                                  .read(personCountStateProvider);
                               Navigator.push(
                                 context,
                                 _SlideUpRoute(
                                   child: ResultsScreen(
                                     budget: budget,
                                     franchises: franchises,
+                                    personCount: personCount,
                                   ),
                                 ),
                               );
@@ -244,6 +251,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PersonCountSelector extends ConsumerWidget {
+  const _PersonCountSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(personCountStateProvider);
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '인원',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        SegmentedButton<int>(
+          segments: const [
+            ButtonSegment(value: 1, label: Text('1인')),
+            ButtonSegment(value: 2, label: Text('2인')),
+            ButtonSegment(value: 3, label: Text('3인')),
+            ButtonSegment(value: 4, label: Text('4인')),
+          ],
+          selected: {count},
+          onSelectionChanged: (selected) {
+            ref
+                .read(personCountStateProvider.notifier)
+                .setCount(selected.first);
+          },
+        ),
+      ],
     );
   }
 }

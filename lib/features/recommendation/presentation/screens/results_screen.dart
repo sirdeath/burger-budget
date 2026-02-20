@@ -18,25 +18,34 @@ class ResultsScreen extends ConsumerWidget {
     super.key,
     required this.budget,
     required this.franchises,
+    this.personCount = 1,
   });
 
   final int budget;
   final List<String> franchises;
+  final int personCount;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sortMode = ref.watch(selectedSortModeProvider);
+    final perPersonBudget =
+        personCount > 1 ? budget ~/ personCount : budget;
     final asyncRecommendations = ref.watch(
       recommendationsProvider(
         budget: budget,
         franchises: franchises,
         sort: sortMode,
+        personCount: personCount,
       ),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('추천 결과 (${formatKRW(budget)})'),
+        title: Text(
+          personCount > 1
+              ? '$personCount인 추천 (${formatKRW(budget)})'
+              : '추천 결과 (${formatKRW(budget)})',
+        ),
         actions: [
           if (asyncRecommendations.asData?.value.isNotEmpty ?? false)
             IconButton(
@@ -54,6 +63,49 @@ class ResultsScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          if (personCount > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              child: Card(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer,
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 18,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimaryContainer,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '$personCount인 기준 · '
+                        '1인당 ${formatKRW(perPersonBudget)}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
@@ -94,6 +146,7 @@ class ResultsScreen extends ConsumerWidget {
                     budget: budget,
                     franchises: franchises,
                     sort: sortMode,
+                    personCount: personCount,
                   ),
                 ),
               ),
@@ -102,9 +155,14 @@ class ResultsScreen extends ConsumerWidget {
                   return EmptyState(
                     icon: Icons.no_meals,
                     title: '추천 가능한 메뉴가 없습니다',
-                    description:
-                        '${formatKRW(budget)} 예산으로는 조합을 찾지 못했어요.\n'
-                        '예산을 올리거나 다른 프랜차이즈를 선택해 보세요.',
+                    description: personCount > 1
+                        ? '${formatKRW(budget)} ($personCount인) '
+                            '예산으로는 조합을 찾지 못했어요.\n'
+                            '예산을 올리거나 인원을 줄여 보세요.'
+                        : '${formatKRW(budget)} 예산으로는 '
+                            '조합을 찾지 못했어요.\n'
+                            '예산을 올리거나 다른 프랜차이즈를 '
+                            '선택해 보세요.',
                     actionLabel: '예산 조정하기',
                     onAction: () => Navigator.pop(context),
                   );
@@ -114,7 +172,7 @@ class ResultsScreen extends ConsumerWidget {
                   child: _StaggeredCardList(
                     key: ValueKey(sortMode),
                     recommendations: recommendations,
-                    budget: budget,
+                    perPersonBudget: perPersonBudget,
                     onTap: (r) => _showDetail(context, r),
                   ),
                 );
@@ -144,12 +202,12 @@ class _StaggeredCardList extends StatefulWidget {
   const _StaggeredCardList({
     super.key,
     required this.recommendations,
-    required this.budget,
+    required this.perPersonBudget,
     required this.onTap,
   });
 
   final List<Recommendation> recommendations;
-  final int budget;
+  final int perPersonBudget;
   final void Function(Recommendation) onTap;
 
   @override
@@ -202,7 +260,7 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
               child: RecommendationCard(
                 recommendation: widget.recommendations[index],
                 rank: index + 1,
-                budget: widget.budget,
+                budget: widget.perPersonBudget,
                 onTap: () => widget.onTap(widget.recommendations[index]),
               ),
             ),

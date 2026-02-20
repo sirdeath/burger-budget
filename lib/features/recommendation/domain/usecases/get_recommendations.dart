@@ -11,11 +11,13 @@ class GetRecommendations {
     required int budget,
     required List<String> franchises,
     SortMode sort = SortMode.bestValue,
+    int personCount = 1,
   }) {
     return _repository.getRecommendations(
       budget: budget,
       franchises: franchises,
       sort: sort,
+      personCount: personCount,
     );
   }
 }

@@ -6,5 +6,6 @@ abstract class RecommendationRepository {
     required int budget,
     required List<String> franchises,
     SortMode sort = SortMode.bestValue,
+    int personCount = 1,
   });
 }

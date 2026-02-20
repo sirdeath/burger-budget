@@ -113,6 +113,7 @@ class FakeRecommendationRepository implements RecommendationRepository {
     required int budget,
     required List<String> franchises,
     SortMode sort = SortMode.bestValue,
+    int personCount = 1,
   }) async {
     final results = <Recommendation>[];
     if (franchises.contains('mcd') && budget >= 10700) {

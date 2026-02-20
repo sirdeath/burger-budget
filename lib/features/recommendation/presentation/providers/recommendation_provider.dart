@@ -55,17 +55,29 @@ class SelectedSortMode extends _$SelectedSortMode {
 }
 
 @riverpod
+class PersonCountState extends _$PersonCountState {
+  @override
+  int build() => 1;
+
+  void setCount(int count) {
+    state = count.clamp(1, 4);
+  }
+}
+
+@riverpod
 Future<List<Recommendation>> recommendations(
   Ref ref, {
   required int budget,
   required List<String> franchises,
   SortMode sort = SortMode.bestValue,
+  int personCount = 1,
 }) async {
   final repository = ref.watch(recommendationRepositoryProvider);
   final result = await repository.getRecommendations(
     budget: budget,
     franchises: franchises,
     sort: sort,
+    personCount: personCount,
   );
   return switch (result) {
     Success(data: final items) => items,
