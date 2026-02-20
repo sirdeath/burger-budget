@@ -47,6 +47,15 @@ class AppConstants {
     'lot': '롯데리아 근처',
   };
 
+  // Franchise official URLs (ordering / coupon pages)
+  static const Map<String, String> franchiseUrls = {
+    'mcd': 'https://www.mcdonalds.co.kr',
+    'bk': 'https://www.burgerking.co.kr',
+    'kfc': 'https://www.kfckorea.com',
+    'mom': 'https://www.momstouch.co.kr',
+    'lot': 'https://www.lotteeatz.com/brand/LT',
+  };
+
   // Budget limits
   static const int minBudget = 1000;
   static const int maxBudget = 100000;

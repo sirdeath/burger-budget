@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -158,10 +159,30 @@ class MenuDetailScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              // Find store button
-              Center(
-                child: FindStoreButton(
-                  franchiseCode: menuItem.franchise,
+              // Action buttons row
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                ),
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    FindStoreButton(
+                      franchiseCode: menuItem.franchise,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    OutlinedButton.icon(
+                      onPressed: () => _openFranchiseSite(
+                        menuItem.franchise,
+                      ),
+                      icon: const Icon(
+                        Icons.open_in_new,
+                        size: 18,
+                      ),
+                      label: const Text('공식 사이트'),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -196,6 +217,16 @@ class MenuDetailScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _openFranchiseSite(String franchise) async {
+    final urlString =
+        AppConstants.franchiseUrls[franchise];
+    if (urlString == null) return;
+    final url = Uri.parse(urlString);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   int get _totalPrice =>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -178,6 +179,35 @@ class _CatalogView extends ConsumerWidget {
                 selectedCatalogFranchiseProvider.notifier,
               )
               .select(code),
+        ),
+        // 공식 사이트 링크
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                final url = AppConstants
+                    .franchiseUrls[selected];
+                if (url != null) {
+                  launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+              },
+              icon: const Icon(
+                Icons.open_in_new,
+                size: 16,
+              ),
+              label: Text(
+                '${AppConstants.franchiseNames[selected] ?? selected} 공식 사이트',
+              ),
+            ),
+          ),
         ),
         // 카테고리별 메뉴 목록
         Expanded(
