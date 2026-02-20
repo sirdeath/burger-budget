@@ -36,8 +36,51 @@ class BurgerBudgetApp extends ConsumerWidget {
       themeMode: themeMode,
       home: showOnboarding
           ? const OnboardingScreen()
-          : const AppShell(),
+          : const _SplashFadeIn(child: AppShell()),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class _SplashFadeIn extends StatefulWidget {
+  const _SplashFadeIn({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_SplashFadeIn> createState() => _SplashFadeInState();
+}
+
+class _SplashFadeInState extends State<_SplashFadeIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _opacity = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: widget.child,
     );
   }
 }

@@ -30,11 +30,72 @@ class _SlideUpRoute extends PageRouteBuilder<void> {
         );
 }
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _staggerController;
+  late final Animation<double> _titleFade;
+  late final Animation<Offset> _titleSlide;
+  late final Animation<double> _budgetFade;
+  late final Animation<Offset> _budgetSlide;
+  late final Animation<double> _franchiseFade;
+  late final Animation<Offset> _franchiseSlide;
+  late final Animation<double> _buttonFade;
+  late final Animation<Offset> _buttonSlide;
+
+  static const _totalDuration = Duration(milliseconds: 800);
+  static const _slideOffset = Offset(0, 0.08);
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: _totalDuration,
+    );
+
+    _titleFade = _interval(0.0, 0.5);
+    _titleSlide = _slideInterval(0.0, 0.5);
+    _budgetFade = _interval(0.15, 0.65);
+    _budgetSlide = _slideInterval(0.15, 0.65);
+    _franchiseFade = _interval(0.3, 0.8);
+    _franchiseSlide = _slideInterval(0.3, 0.8);
+    _buttonFade = _interval(0.45, 1.0);
+    _buttonSlide = _slideInterval(0.45, 1.0);
+
+    _staggerController.forward();
+  }
+
+  Animation<double> _interval(double begin, double end) {
+    return CurvedAnimation(
+      parent: _staggerController,
+      curve: Interval(begin, end, curve: Curves.easeOut),
+    );
+  }
+
+  Animation<Offset> _slideInterval(double begin, double end) {
+    return Tween(begin: _slideOffset, end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _staggerController,
+        curve: Interval(begin, end, curve: Curves.easeOut),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _staggerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final hasBudget =
         ref.watch(budgetStateProvider.select((b) => b != null));
     final hasFranchises = ref.watch(
@@ -71,43 +132,71 @@ class HomeScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        '예산을 입력하고\n프랜차이즈를 선택하세요',
-                        style: theme.textTheme.headlineSmall,
+                      SlideTransition(
+                        position: _titleSlide,
+                        child: FadeTransition(
+                          opacity: _titleFade,
+                          child: Text(
+                            '예산을 입력하고\n프랜차이즈를 선택하세요',
+                            style: theme.textTheme.headlineSmall,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      Card(
-                        margin: EdgeInsets.zero,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '예산 설정',
-                                style: theme.textTheme.titleSmall,
+                      SlideTransition(
+                        position: _budgetSlide,
+                        child: FadeTransition(
+                          opacity: _budgetFade,
+                          child: Card(
+                            margin: EdgeInsets.zero,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.all(AppSpacing.md),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '예산 설정',
+                                    style:
+                                        theme.textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(
+                                    height: AppSpacing.sm,
+                                  ),
+                                  const BudgetInputWidget(),
+                                ],
                               ),
-                              const SizedBox(height: AppSpacing.sm),
-                              const BudgetInputWidget(),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      Card(
-                        margin: EdgeInsets.zero,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '프랜차이즈',
-                                style: theme.textTheme.titleSmall,
+                      SlideTransition(
+                        position: _franchiseSlide,
+                        child: FadeTransition(
+                          opacity: _franchiseFade,
+                          child: Card(
+                            margin: EdgeInsets.zero,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.all(AppSpacing.md),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '프랜차이즈',
+                                    style:
+                                        theme.textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(
+                                    height: AppSpacing.sm,
+                                  ),
+                                  const FranchiseChips(),
+                                ],
                               ),
-                              const SizedBox(height: AppSpacing.sm),
-                              const FranchiseChips(),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -116,30 +205,38 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              AnimatedScale(
-                scale: canRecommend ? 1.0 : 0.95,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                child: FilledButton.icon(
-                  onPressed: canRecommend
-                      ? () {
-                          HapticFeedback.mediumImpact();
-                          final budget = ref.read(budgetStateProvider)!;
-                          final franchises =
-                              ref.read(selectedFranchisesProvider).toList();
-                          Navigator.push(
-                            context,
-                            _SlideUpRoute(
-                              child: ResultsScreen(
-                                budget: budget,
-                                franchises: franchises,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  icon: const Icon(Icons.restaurant_menu),
-                  label: const Text('추천받기'),
+              SlideTransition(
+                position: _buttonSlide,
+                child: FadeTransition(
+                  opacity: _buttonFade,
+                  child: AnimatedScale(
+                    scale: canRecommend ? 1.0 : 0.95,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    child: FilledButton.icon(
+                      onPressed: canRecommend
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              final budget =
+                                  ref.read(budgetStateProvider)!;
+                              final franchises = ref
+                                  .read(selectedFranchisesProvider)
+                                  .toList();
+                              Navigator.push(
+                                context,
+                                _SlideUpRoute(
+                                  child: ResultsScreen(
+                                    budget: budget,
+                                    franchises: franchises,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
+                      icon: const Icon(Icons.restaurant_menu),
+                      label: const Text('추천받기'),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
