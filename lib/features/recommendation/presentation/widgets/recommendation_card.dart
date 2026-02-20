@@ -101,7 +101,8 @@ class RecommendationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       if (recommendation.sideItem != null ||
-                          recommendation.drinkItem != null)
+                          recommendation.drinkItem != null ||
+                          recommendation.dessertItem != null)
                         Padding(
                           padding: const EdgeInsets.only(left: 36),
                           child: Wrap(
@@ -117,6 +118,11 @@ class RecommendationCard extends StatelessWidget {
                                 _SubItemChip(
                                   label: recommendation.drinkItem!.name,
                                   price: recommendation.drinkItem!.price,
+                                ),
+                              if (recommendation.dessertItem != null)
+                                _SubItemChip(
+                                  label: recommendation.dessertItem!.name,
+                                  price: recommendation.dessertItem!.price,
                                 ),
                             ],
                           ),

@@ -34,6 +34,8 @@ class MenuItem {
     this.calories,
     this.imageUrl,
     this.tags = const [],
+    this.includesSide = false,
+    this.includesDrink = false,
   });
 
   final String id;
@@ -44,4 +46,6 @@ class MenuItem {
   final int? calories;
   final String? imageUrl;
   final List<String> tags;
+  final bool includesSide;
+  final bool includesDrink;
 }

@@ -8,14 +8,17 @@ String formatComboForShare({
   required MenuItem mainItem,
   MenuItem? sideItem,
   MenuItem? drinkItem,
+  MenuItem? dessertItem,
 }) {
   final buffer = StringBuffer();
   final franchise =
       AppConstants.franchiseNames[mainItem.franchise] ?? mainItem.franchise;
   final emoji =
       AppConstants.franchiseEmojis[mainItem.franchise] ?? '';
-  final totalPrice =
-      mainItem.price + (sideItem?.price ?? 0) + (drinkItem?.price ?? 0);
+  final totalPrice = mainItem.price +
+      (sideItem?.price ?? 0) +
+      (drinkItem?.price ?? 0) +
+      (dessertItem?.price ?? 0);
 
   buffer.writeln('$emoji $franchise 추천 조합');
   buffer.writeln();
@@ -30,10 +33,20 @@ String formatComboForShare({
       '🥤 음료: ${drinkItem.name} - ${formatKRW(drinkItem.price)}',
     );
   }
+  if (dessertItem != null) {
+    buffer.writeln(
+      '🍦 디저트: ${dessertItem.name} - ${formatKRW(dessertItem.price)}',
+    );
+  }
   buffer.writeln();
   buffer.writeln('💰 총 가격: ${formatKRW(totalPrice)}');
 
-  final totalCalories = _calcTotalCalories(mainItem, sideItem, drinkItem);
+  final totalCalories = _calcTotalCalories(
+    mainItem,
+    sideItem,
+    drinkItem,
+    dessertItem,
+  );
   if (totalCalories != null) {
     buffer.writeln('🔥 총 칼로리: $totalCalories kcal');
   }
@@ -58,6 +71,7 @@ String formatResultsForShare({
     final parts = <String>[r.mainItem.name];
     if (r.sideItem != null) parts.add(r.sideItem!.name);
     if (r.drinkItem != null) parts.add(r.drinkItem!.name);
+    if (r.dessertItem != null) parts.add(r.dessertItem!.name);
 
     final franchise =
         AppConstants.franchiseNames[r.mainItem.franchise] ??
@@ -76,8 +90,12 @@ String formatResultsForShare({
 int? _calcTotalCalories(
   MenuItem main,
   MenuItem? side,
-  MenuItem? drink,
-) {
+  MenuItem? drink, [
+  MenuItem? dessert,
+]) {
   if (main.calories == null) return null;
-  return main.calories! + (side?.calories ?? 0) + (drink?.calories ?? 0);
+  return main.calories! +
+      (side?.calories ?? 0) +
+      (drink?.calories ?? 0) +
+      (dessert?.calories ?? 0);
 }

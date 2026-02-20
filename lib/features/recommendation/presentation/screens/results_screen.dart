@@ -134,6 +134,7 @@ class ResultsScreen extends ConsumerWidget {
         menuItem: recommendation.mainItem,
         sideItem: recommendation.sideItem,
         drinkItem: recommendation.drinkItem,
+        dessertItem: recommendation.dessertItem,
       ),
     );
   }

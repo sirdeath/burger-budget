@@ -19,11 +19,13 @@ class MenuDetailScreen extends ConsumerWidget {
     required this.menuItem,
     this.sideItem,
     this.drinkItem,
+    this.dessertItem,
   });
 
   final MenuItem menuItem;
   final MenuItem? sideItem;
   final MenuItem? drinkItem;
+  final MenuItem? dessertItem;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,6 +84,7 @@ class MenuDetailScreen extends ConsumerWidget {
                           mainItem: menuItem,
                           sideItem: sideItem,
                           drinkItem: drinkItem,
+                          dessertItem: dessertItem,
                         );
                         Share.share(text);
                       },
@@ -120,6 +123,12 @@ class MenuDetailScreen extends ConsumerWidget {
                         label: MenuTypeDisplay.label(drinkItem!.type),
                         icon: MenuTypeDisplay.icon(drinkItem!.type),
                         item: drinkItem!,
+                      ),
+                    if (dessertItem != null)
+                      _MenuItemCard(
+                        label: MenuTypeDisplay.label(dessertItem!.type),
+                        icon: MenuTypeDisplay.icon(dessertItem!.type),
+                        item: dessertItem!,
                       ),
                   ],
                 ),
@@ -192,7 +201,8 @@ class MenuDetailScreen extends ConsumerWidget {
   int get _totalPrice =>
       menuItem.price +
       (sideItem?.price ?? 0) +
-      (drinkItem?.price ?? 0);
+      (drinkItem?.price ?? 0) +
+      (dessertItem?.price ?? 0);
 }
 
 class _FranchiseBadge extends StatelessWidget {

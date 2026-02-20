@@ -10,6 +10,8 @@ class MenuItemModel extends MenuItem {
     super.calories,
     super.imageUrl,
     super.tags,
+    super.includesSide,
+    super.includesDrink,
   });
 
   factory MenuItemModel.fromMap(Map<String, dynamic> map) {
@@ -27,6 +29,8 @@ class MenuItemModel extends MenuItem {
       calories: map['calories'] as int?,
       imageUrl: map['imageUrl'] as String?,
       tags: tags,
+      includesSide: (map['includes_side'] as int?) == 1,
+      includesDrink: (map['includes_drink'] as int?) == 1,
     );
   }
 
@@ -40,6 +44,8 @@ class MenuItemModel extends MenuItem {
       'calories': calories,
       'imageUrl': imageUrl,
       'tags': tags.join(','),
+      'includes_side': includesSide ? 1 : 0,
+      'includes_drink': includesDrink ? 1 : 0,
     };
   }
 
@@ -53,6 +59,8 @@ class MenuItemModel extends MenuItem {
       calories: entity.calories,
       imageUrl: entity.imageUrl,
       tags: entity.tags,
+      includesSide: entity.includesSide,
+      includesDrink: entity.includesDrink,
     );
   }
 }

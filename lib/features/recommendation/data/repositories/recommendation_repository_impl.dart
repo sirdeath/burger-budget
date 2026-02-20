@@ -42,28 +42,64 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     final drinks = candidates
         .where((item) => item.type == MenuType.drink)
         .toList();
-
-    final mains = sets.isNotEmpty ? sets : burgers;
-    if (mains.isEmpty) return [];
+    final desserts = candidates
+        .where((item) => item.type == MenuType.dessert)
+        .toList();
 
     final results = <Recommendation>[];
 
-    for (final main in mains.take(AppConstants.maxRecommendations)) {
-      var remaining = budget - main.price;
+    // 1) 세트 기반 추천: 세트가 포함하는 사이드/음료는 중복 추천 안 함
+    for (final setItem in sets) {
+      if (setItem.price > budget) continue;
+      var remaining = budget - setItem.price;
 
-      final bestSide = _pickBest(sides, remaining);
-      if (bestSide != null) {
-        remaining -= bestSide.price;
+      // 세트가 사이드 미포함이면 사이드 추천
+      MenuItem? sideItem;
+      if (!setItem.includesSide) {
+        sideItem = _pickBest(sides, remaining);
+        if (sideItem != null) remaining -= sideItem.price;
       }
 
-      final bestDrink = _pickBest(drinks, remaining);
+      // 세트가 음료 미포함이면 음료 추천
+      MenuItem? drinkItem;
+      if (!setItem.includesDrink) {
+        drinkItem = _pickBest(drinks, remaining);
+        if (drinkItem != null) remaining -= drinkItem.price;
+      }
+
+      // 남은 예산으로 디저트 추천
+      final dessertItem = _pickBest(desserts, remaining);
 
       results.add(Recommendation(
-        mainItem: main,
-        sideItem: bestSide,
-        drinkItem: bestDrink,
+        mainItem: setItem,
+        sideItem: sideItem,
+        drinkItem: drinkItem,
+        dessertItem: dessertItem,
       ));
     }
+
+    // 2) 단품 버거 기반 추천
+    for (final burger in burgers) {
+      if (burger.price > budget) continue;
+      var remaining = budget - burger.price;
+
+      final bestSide = _pickBest(sides, remaining);
+      if (bestSide != null) remaining -= bestSide.price;
+
+      final bestDrink = _pickBest(drinks, remaining);
+      if (bestDrink != null) remaining -= bestDrink.price;
+
+      final dessertItem = _pickBest(desserts, remaining);
+
+      results.add(Recommendation(
+        mainItem: burger,
+        sideItem: bestSide,
+        drinkItem: bestDrink,
+        dessertItem: dessertItem,
+      ));
+    }
+
+    if (results.isEmpty && burgers.isEmpty && sets.isEmpty) return [];
 
     return results;
   }
