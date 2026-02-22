@@ -28,6 +28,8 @@ class ResultsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sortMode = ref.watch(selectedSortModeProvider);
+    final menuTypeFilter =
+        ref.watch(selectedMenuTypeFilterProvider);
     final perPersonBudget =
         personCount > 1 ? budget ~/ personCount : budget;
     final asyncRecommendations = ref.watch(
@@ -129,9 +131,47 @@ class ResultsScreen extends ConsumerWidget {
                 ref
                     .read(selectedSortModeProvider.notifier)
                     .setSortMode(selected.first);
+                ref
+                    .read(displayedCountStateProvider.notifier)
+                    .reset();
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+            ),
+            child: SegmentedButton<MenuTypeFilter>(
+              segments: const [
+                ButtonSegment(
+                  value: MenuTypeFilter.all,
+                  label: Text('전체'),
+                ),
+                ButtonSegment(
+                  value: MenuTypeFilter.setOnly,
+                  label: Text('세트'),
+                  icon: Icon(Icons.lunch_dining),
+                ),
+                ButtonSegment(
+                  value: MenuTypeFilter.singleOnly,
+                  label: Text('단품'),
+                  icon: Icon(Icons.restaurant),
+                ),
+              ],
+              selected: {menuTypeFilter},
+              onSelectionChanged: (selected) {
+                ref
+                    .read(
+                      selectedMenuTypeFilterProvider.notifier,
+                    )
+                    .setFilter(selected.first);
+                ref
+                    .read(displayedCountStateProvider.notifier)
+                    .reset();
+              },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
           Expanded(
             child: asyncRecommendations.when(
               loading: () => ListView.builder(
@@ -150,29 +190,71 @@ class ResultsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              data: (recommendations) {
+              data: (allRecommendations) {
+                final recommendations = switch (menuTypeFilter)
+                {
+                  MenuTypeFilter.all =>
+                    allRecommendations,
+                  MenuTypeFilter.setOnly =>
+                    allRecommendations
+                        .where((r) => r.isSet)
+                        .toList(),
+                  MenuTypeFilter.singleOnly =>
+                    allRecommendations
+                        .where((r) => !r.isSet)
+                        .toList(),
+                };
                 if (recommendations.isEmpty) {
+                  final isFiltered =
+                      menuTypeFilter != MenuTypeFilter.all;
                   return EmptyState(
                     icon: Icons.no_meals,
-                    title: '추천 가능한 메뉴가 없습니다',
-                    description: personCount > 1
-                        ? '${formatKRW(budget)} ($personCount인) '
-                            '예산으로는 조합을 찾지 못했어요.\n'
-                            '예산을 올리거나 인원을 줄여 보세요.'
-                        : '${formatKRW(budget)} 예산으로는 '
-                            '조합을 찾지 못했어요.\n'
-                            '예산을 올리거나 다른 프랜차이즈를 '
-                            '선택해 보세요.',
-                    actionLabel: '예산 조정하기',
-                    onAction: () => Navigator.pop(context),
+                    title: isFiltered
+                        ? '${menuTypeFilter == MenuTypeFilter.setOnly ? '세트' : '단품'} 메뉴가 없습니다'
+                        : '추천 가능한 메뉴가 없습니다',
+                    description: isFiltered
+                        ? '필터를 변경하거나 "전체"를 선택해 보세요.'
+                        : personCount > 1
+                            ? '${formatKRW(budget)} ($personCount인) '
+                                '예산으로는 조합을 찾지 못했어요.\n'
+                                '예산을 올리거나 인원을 줄여 보세요.'
+                            : '${formatKRW(budget)} 예산으로는 '
+                                '조합을 찾지 못했어요.\n'
+                                '예산을 올리거나 다른 프랜차이즈를 '
+                                '선택해 보세요.',
+                    actionLabel: isFiltered
+                        ? '전체 보기'
+                        : '예산 조정하기',
+                    onAction: isFiltered
+                        ? () => ref
+                            .read(
+                              selectedMenuTypeFilterProvider
+                                  .notifier,
+                            )
+                            .setFilter(MenuTypeFilter.all)
+                        : () => Navigator.pop(context),
                   );
                 }
+                final displayedCount =
+                    ref.watch(displayedCountStateProvider);
+                final visible = recommendations.length >
+                        displayedCount
+                    ? recommendations.sublist(0, displayedCount)
+                    : recommendations;
+                final hasMore =
+                    displayedCount < recommendations.length;
                 return AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: _StaggeredCardList(
                     key: ValueKey(sortMode),
-                    recommendations: recommendations,
+                    recommendations: visible,
                     perPersonBudget: perPersonBudget,
+                    hasMore: hasMore,
+                    onLoadMore: () => ref
+                        .read(
+                          displayedCountStateProvider.notifier,
+                        )
+                        .loadMore(),
                     onTap: (r) => _showDetail(context, r),
                   ),
                 );
@@ -203,11 +285,15 @@ class _StaggeredCardList extends StatefulWidget {
     super.key,
     required this.recommendations,
     required this.perPersonBudget,
+    required this.hasMore,
+    required this.onLoadMore,
     required this.onTap,
   });
 
   final List<Recommendation> recommendations;
   final int perPersonBudget;
+  final bool hasMore;
+  final VoidCallback onLoadMore;
   final void Function(Recommendation) onTap;
 
   @override
@@ -238,35 +324,58 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
   @override
   Widget build(BuildContext context) {
     final count = widget.recommendations.length;
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      itemCount: count,
-      itemBuilder: (context, index) {
-        final start = (index / count) * 0.6;
-        final end = start + 0.4;
-        final animation = CurvedAnimation(
-          parent: _controller,
-          curve: Interval(start, end.clamp(0.0, 1.0),
-              curve: Curves.easeOutCubic),
-        );
-        return RepaintBoundary(
-          child: FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween(
-                begin: const Offset(0, 0.1),
-                end: Offset.zero,
-              ).animate(animation),
-              child: RecommendationCard(
-                recommendation: widget.recommendations[index],
-                rank: index + 1,
-                budget: widget.perPersonBudget,
-                onTap: () => widget.onTap(widget.recommendations[index]),
+    final itemCount = count + (widget.hasMore ? 1 : 0);
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (widget.hasMore &&
+            notification.metrics.pixels >=
+                notification.metrics.maxScrollExtent - 200) {
+          widget.onLoadMore();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          if (index >= count) {
+            return const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          final start = (index / count) * 0.6;
+          final end = start + 0.4;
+          final animation = CurvedAnimation(
+            parent: _controller,
+            curve: Interval(
+              start,
+              end.clamp(0.0, 1.0),
+              curve: Curves.easeOutCubic,
+            ),
+          );
+          return RepaintBoundary(
+            child: FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 0.1),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: RecommendationCard(
+                  recommendation: widget.recommendations[index],
+                  rank: index + 1,
+                  budget: widget.perPersonBudget,
+                  onTap: () =>
+                      widget.onTap(widget.recommendations[index]),
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

@@ -64,6 +64,32 @@ class PersonCountState extends _$PersonCountState {
   }
 }
 
+enum MenuTypeFilter { all, setOnly, singleOnly }
+
+@riverpod
+class SelectedMenuTypeFilter extends _$SelectedMenuTypeFilter {
+  @override
+  MenuTypeFilter build() => MenuTypeFilter.all;
+
+  void setFilter(MenuTypeFilter filter) {
+    state = filter;
+  }
+}
+
+@riverpod
+class DisplayedCountState extends _$DisplayedCountState {
+  @override
+  int build() => AppConstants.maxRecommendations;
+
+  void loadMore() {
+    state = state + AppConstants.maxRecommendations;
+  }
+
+  void reset() {
+    state = AppConstants.maxRecommendations;
+  }
+}
+
 @riverpod
 Future<List<Recommendation>> recommendations(
   Ref ref, {

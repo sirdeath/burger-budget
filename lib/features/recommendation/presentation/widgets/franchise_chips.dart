@@ -22,40 +22,38 @@ class FranchiseChips extends ConsumerWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
-            AnimatedScale(
-              scale: isAllSelected ? 1.05 : 1.0,
-              duration: const Duration(milliseconds: 150),
-              child: FilterChip(
-                label: const Text('전체'),
-                selected: isAllSelected,
-                onSelected: (_) =>
-                    ref.read(selectedFranchisesProvider.notifier).toggleAll(),
-                selectedColor:
-                    Theme.of(context).colorScheme.primaryContainer,
-              ),
+            FilterChip(
+              label: const Text('전체'),
+              selected: isAllSelected,
+              showCheckmark: false,
+              onSelected: (_) => ref
+                  .read(selectedFranchisesProvider.notifier)
+                  .toggleAll(),
+              selectedColor:
+                  Theme.of(context).colorScheme.primaryContainer,
             ),
             ...AppConstants.franchiseCodes.map((code) {
               final name = AppConstants.franchiseNames[code]!;
-              final emoji = AppConstants.franchiseEmojis[code] ?? '';
+              final emoji =
+                  AppConstants.franchiseEmojis[code] ?? '';
               final isSelected = selected.contains(code);
               final color = AppTheme.franchiseColor(
                 code,
                 Theme.of(context).brightness,
               );
-              return AnimatedScale(
-                scale: isSelected ? 1.05 : 1.0,
-                duration: const Duration(milliseconds: 150),
-                child: FilterChip(
-                  avatar:
-                      Text(emoji, style: const TextStyle(fontSize: 16)),
-                  label: Text(name),
-                  selected: isSelected,
-                  onSelected: (_) => ref
-                      .read(selectedFranchisesProvider.notifier)
-                      .toggle(code),
-                  selectedColor: color.withValues(alpha: 0.2),
-                  checkmarkColor: color,
+              return FilterChip(
+                avatar: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 16),
                 ),
+                label: Text(name),
+                selected: isSelected,
+                showCheckmark: false,
+                onSelected: (_) => ref
+                    .read(selectedFranchisesProvider.notifier)
+                    .toggle(code),
+                selectedColor:
+                    color.withValues(alpha: 0.2),
               );
             }),
           ],

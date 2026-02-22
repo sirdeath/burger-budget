@@ -272,20 +272,61 @@ class _PersonCountSelector extends ConsumerWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        SegmentedButton<int>(
-          segments: const [
-            ButtonSegment(value: 1, label: Text('1인')),
-            ButtonSegment(value: 2, label: Text('2인')),
-            ButtonSegment(value: 3, label: Text('3인')),
-            ButtonSegment(value: 4, label: Text('4인')),
-          ],
-          selected: {count},
-          onSelectionChanged: (selected) {
-            ref
-                .read(personCountStateProvider.notifier)
-                .setCount(selected.first);
-          },
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: List.generate(4, (index) {
+            final personCount = index + 1;
+            final isSelected = count == personCount;
+            return Padding(
+              padding: EdgeInsets.only(
+                right: index < 3 ? AppSpacing.sm : 0,
+              ),
+              child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(personCountStateProvider.notifier)
+                        .setCount(personCount);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(
+                      milliseconds: 200,
+                    ),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primaryContainer
+                          : theme
+                              .colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                        personCount,
+                        (i) => Icon(
+                          Icons.person,
+                          size: 16,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme
+                                  .colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+              ),
+            );
+          }),
         ),
       ],
     );

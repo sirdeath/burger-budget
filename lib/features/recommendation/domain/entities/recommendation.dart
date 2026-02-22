@@ -15,6 +15,8 @@ class Recommendation {
   final MenuItem? drinkItem;
   final MenuItem? dessertItem;
 
+  bool get isSet => mainItem.type == MenuType.set_;
+
   int get totalPrice =>
       mainItem.price +
       (sideItem?.price ?? 0) +

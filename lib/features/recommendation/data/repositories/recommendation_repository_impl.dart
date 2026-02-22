@@ -1,4 +1,3 @@
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/result.dart';
 import '../../../menu/domain/entities/menu_item.dart';
 import '../../domain/entities/recommendation.dart';
@@ -177,9 +176,10 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     if (budget <= 0) return 0;
 
     final utilization = combo.totalPrice / budget;
+    final main = combo.mainItem;
     final componentCount = 1 +
-        (combo.sideItem != null ? 1 : 0) +
-        (combo.drinkItem != null ? 1 : 0) +
+        (combo.sideItem != null || main.includesSide ? 1 : 0) +
+        (combo.drinkItem != null || main.includesDrink ? 1 : 0) +
         (combo.dessertItem != null ? 1 : 0);
     final completeness = componentCount / 4.0;
 
@@ -206,15 +206,12 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     // 점수 높은 순 정렬
     scored.sort((a, b) => b.score.compareTo(a.score));
 
-    final limit = AppConstants.maxRecommendations;
     final result = <Recommendation>[];
     final mainCounts = <String, int>{};
     final seen = <String>{};
 
-    // 1차: 다양성 제약 적용하며 선택
+    // 1차: 다양성 제약 적용 (동일 메인 최대 _maxPerMain개)
     for (final entry in scored) {
-      if (result.length >= limit) break;
-
       final combo = entry.combo;
       final key = _comboKey(combo);
       if (!seen.add(key)) continue;
@@ -227,16 +224,12 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       mainCounts[mainId] = count + 1;
     }
 
-    // 2차: 아직 자리가 남으면 제약 완화하여 채움
-    if (result.length < limit) {
-      for (final entry in scored) {
-        if (result.length >= limit) break;
-
-        final key = _comboKey(entry.combo);
-        if (seen.contains(key)) continue;
-        seen.add(key);
-        result.add(entry.combo);
-      }
+    // 2차: 제약 완화하여 나머지 유니크 조합 추가
+    for (final entry in scored) {
+      final key = _comboKey(entry.combo);
+      if (seen.contains(key)) continue;
+      seen.add(key);
+      result.add(entry.combo);
     }
 
     return result;
@@ -267,9 +260,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           return aCal.compareTo(bCal);
         });
     }
-    return sorted
-        .take(AppConstants.maxRecommendations)
-        .toList();
+    return sorted;
   }
 }
 

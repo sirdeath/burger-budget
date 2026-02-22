@@ -133,7 +133,7 @@ MENUS = [
     ('mom_burger_02', 'mom', '불싸이버거', 'burger', 5100, 520, None, '매운,인기', 0, 0),
     ('mom_burger_03', 'mom', '인크레더블버거', 'burger', 6000, 590, None, '프리미엄', 0, 0),
     ('mom_burger_04', 'mom', '치즈불싸이버거', 'burger', 5600, 560, None, '매운', 0, 0),
-    ('mom_burger_05', 'mom', '흑미새우버거', 'burger', 5200, 420, None, '', 0, 0),
+    ('mom_burger_05', 'mom', '통새우버거', 'burger', 5200, 450, None, '', 0, 0),
     ('mom_burger_06', 'mom', '딥치즈버거', 'burger', 5400, 510, None, '', 0, 0),
     ('mom_burger_07', 'mom', '화이트갈릭싸이버거', 'burger', 5500, 500, None, '인기', 0, 0),
     ('mom_burger_08', 'mom', '언빌리버블버거', 'burger', 6500, 610, None, '프리미엄', 0, 0),

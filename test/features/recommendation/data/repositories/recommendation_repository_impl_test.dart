@@ -186,6 +186,8 @@ void main() {
           type: MenuType.set_,
           price: 7500,
           calories: 1100,
+          includesSide: true,
+          includesDrink: true,
         ),
         MenuItemModel(
           id: 'mcd_001',
@@ -194,6 +196,14 @@ void main() {
           type: MenuType.burger,
           price: 5500,
           calories: 583,
+        ),
+        MenuItemModel(
+          id: 'mcd_s01',
+          franchise: 'mcd',
+          name: '프렌치 프라이',
+          type: MenuType.side,
+          price: 2800,
+          calories: 330,
         ),
         MenuItemModel(
           id: 'mcd_d01',
@@ -213,12 +223,75 @@ void main() {
       );
 
       final data = (result as Success<List<Recommendation>>).data;
-      // 세트가 메인으로 사용되어야 함
-      expect(data[0].mainItem.type, MenuType.set_);
+      // 세트가 completeness 보정으로 상위에 와야 함
+      final setResults =
+          data.where((r) => r.mainItem.type == MenuType.set_);
+      expect(setResults, isNotEmpty,
+          reason: '세트가 추천 결과에 포함되어야 합니다');
     });
 
-    test('should limit to maxRecommendations', () async {
-      // 6개 버거 후보
+    test(
+        'set completeness: includesSide/Drink counted in scoring',
+        () async {
+      // 세트(사이드+음료 포함, 8000원)와 버거(5000원)+사이드+음료 조합
+      // 예산 10000일 때 세트의 completeness가 3/4로 보정되어야 함
+      const candidates = [
+        MenuItemModel(
+          id: 'mcd_set01',
+          franchise: 'mcd',
+          name: '빅맥세트',
+          type: MenuType.set_,
+          price: 8000,
+          calories: 1100,
+          includesSide: true,
+          includesDrink: true,
+        ),
+        MenuItemModel(
+          id: 'mcd_001',
+          franchise: 'mcd',
+          name: '빅맥',
+          type: MenuType.burger,
+          price: 5000,
+          calories: 583,
+        ),
+        MenuItemModel(
+          id: 'mcd_s01',
+          franchise: 'mcd',
+          name: '프라이',
+          type: MenuType.side,
+          price: 2500,
+          calories: 330,
+        ),
+        MenuItemModel(
+          id: 'mcd_d01',
+          franchise: 'mcd',
+          name: '콜라',
+          type: MenuType.drink,
+          price: 2000,
+          calories: 190,
+        ),
+      ];
+      when(() => mockDatasource.getCandidates(10000, ['mcd']))
+          .thenAnswer((_) async => candidates);
+
+      final result = await repository.getRecommendations(
+        budget: 10000,
+        franchises: ['mcd'],
+      );
+
+      final data = (result as Success<List<Recommendation>>).data;
+      expect(data, isNotEmpty);
+      // 세트(8000원, completeness 3/4)가 결과에 포함되어야 함
+      // 버그 수정 전에는 completeness 1/4로 밀렸음
+      final hasSet =
+          data.any((r) => r.mainItem.type == MenuType.set_);
+      expect(hasSet, isTrue,
+          reason: '세트의 includesSide/Drink가 completeness에 '
+              '반영되어 추천에 포함되어야 합니다');
+    });
+
+    test('should return all unique combos (no hard cap)', () async {
+      // 6개 버거 후보 → 하드캡 없이 전부 리턴
       final manyBurgers = List.generate(
         6,
         (i) => MenuItemModel(
@@ -239,7 +312,8 @@ void main() {
       );
 
       final data = (result as Success<List<Recommendation>>).data;
-      expect(data.length, lessThanOrEqualTo(5));
+      // 6개 버거 각각 메인만 있는 조합 → 최소 6개
+      expect(data.length, greaterThanOrEqualTo(6));
     });
 
     test('should return Failure on datasource exception', () async {
