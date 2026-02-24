@@ -81,7 +81,8 @@ class DisplayedCountState extends _$DisplayedCountState {
   @override
   int build() => AppConstants.maxRecommendations;
 
-  void loadMore() {
+  void loadMore(int totalCount) {
+    if (state >= totalCount) return;
     state = state + AppConstants.maxRecommendations;
   }
 

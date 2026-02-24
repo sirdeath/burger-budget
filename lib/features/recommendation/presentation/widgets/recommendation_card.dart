@@ -90,6 +90,30 @@ class RecommendationCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (recommendation.isSet)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme
+                                    .colorScheme.tertiaryContainer,
+                                borderRadius:
+                                    BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '세트',
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(
+                                  color: theme.colorScheme
+                                      .onTertiaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          if (recommendation.isSet)
+                            const SizedBox(width: 4),
                           Chip(
                             label: Text(
                               franchiseName,
@@ -100,33 +124,36 @@ class RecommendationCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      if (recommendation.sideItem != null ||
-                          recommendation.drinkItem != null ||
-                          recommendation.dessertItem != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 36),
-                          child: Wrap(
-                            spacing: AppSpacing.sm,
-                            runSpacing: AppSpacing.xs,
-                            children: [
-                              if (recommendation.sideItem != null)
-                                _SubItemChip(
-                                  label: recommendation.sideItem!.name,
-                                  price: recommendation.sideItem!.price,
-                                ),
-                              if (recommendation.drinkItem != null)
-                                _SubItemChip(
-                                  label: recommendation.drinkItem!.name,
-                                  price: recommendation.drinkItem!.price,
-                                ),
-                              if (recommendation.dessertItem != null)
-                                _SubItemChip(
-                                  label: recommendation.dessertItem!.name,
-                                  price: recommendation.dessertItem!.price,
-                                ),
-                            ],
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 36),
+                        child: Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            if (recommendation.isSet)
+                              _IncludedLabel(
+                                side: main.includesSide,
+                                drink: main.includesDrink,
+                                theme: theme,
+                              ),
+                            if (recommendation.sideItem != null)
+                              _SubItemChip(
+                                label: recommendation.sideItem!.name,
+                                price: recommendation.sideItem!.price,
+                              ),
+                            if (recommendation.drinkItem != null)
+                              _SubItemChip(
+                                label: recommendation.drinkItem!.name,
+                                price: recommendation.drinkItem!.price,
+                              ),
+                            if (recommendation.dessertItem != null)
+                              _SubItemChip(
+                                label: recommendation.dessertItem!.name,
+                                price: recommendation.dessertItem!.price,
+                              ),
+                          ],
                         ),
+                      ),
                       const SizedBox(height: AppSpacing.sm),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -224,6 +251,44 @@ class _RankBadge extends StatelessWidget {
         '$rank',
         style: theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _IncludedLabel extends StatelessWidget {
+  const _IncludedLabel({
+    required this.side,
+    required this.drink,
+    required this.theme,
+  });
+
+  final bool side;
+  final bool drink;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <String>[
+      if (side) '사이드',
+      if (drink) '음료',
+    ];
+    if (parts.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer
+            .withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '${parts.join('+')} 포함',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onTertiaryContainer,
         ),
       ),
     );

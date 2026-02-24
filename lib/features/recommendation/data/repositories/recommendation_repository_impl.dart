@@ -16,6 +16,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   /// 같은 메인 아이템이 최종 결과에 최대 몇 개 포함될 수 있는지
   static const _maxPerMain = 2;
 
+  /// 최종 결과 상한
+  static const _maxResults = 50;
+
   @override
   Future<Result<List<Recommendation>>> getRecommendations({
     required int budget,
@@ -167,10 +170,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
   // ── 2단계: 점수 산정 ──
   //
-  // 가성비 앱의 핵심: 예산을 알뜰하게 쓰면서 균형잡힌 한끼를 추천
-  // - 예산 활용도 (55%): 예산 대비 총 가격 비율이 높을수록 좋음
-  // - 구성 완성도 (30%): 메인+사이드+음료+디저트 4가지 중 몇 개인지
-  // - 잔액 페널티 (15%): 예산의 30% 이상 남으면 감점
+  // 예산 활용도 (55%): 예산 대비 총 가격 비율
+  // 구성 완성도 (30%): 메인+사이드+음료+디저트 (세트 포함분 인정)
+  // 잔액 페널티 (15%): 예산의 30% 이상 남으면 감점
 
   double _scoreCombo(Recommendation combo, int budget) {
     if (budget <= 0) return 0;
@@ -191,45 +193,61 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         leftoverPenalty * 0.15;
   }
 
-  // ── 3단계: 다양성 보장 선택 ──
+  // ── 3단계: 다양성 보장 선택 (프랜차이즈 라운드로빈) ──
   //
-  // 점수 높은 순으로 선택하되:
-  // - 동일 메인 아이템 최대 2개
-  // - 동일 조합(메인+사이드+음료+디저트) 중복 제거
-  // - 프랜차이즈가 여러 개면 분산 선택
+  // - 프랜차이즈별 그룹 → 점수순 정렬
+  // - 라운드로빈으로 각 프랜차이즈에서 1개씩 번갈아 선택
+  // - 동일 메인 아이템 최대 _maxPerMain개
+  // - 동일 조합 중복 제거
 
   List<Recommendation> _selectDiverse(
     List<_ScoredCombo> scored,
   ) {
     if (scored.isEmpty) return [];
 
-    // 점수 높은 순 정렬
     scored.sort((a, b) => b.score.compareTo(a.score));
+
+    // 프랜차이즈별 큐 (중복 조합 제거)
+    final seen = <String>{};
+    final queues = <String, List<_ScoredCombo>>{};
+    for (final entry in scored) {
+      final key = _comboKey(entry.combo);
+      if (!seen.add(key)) continue;
+      queues
+          .putIfAbsent(entry.combo.mainItem.franchise, () => [])
+          .add(entry);
+    }
 
     final result = <Recommendation>[];
     final mainCounts = <String, int>{};
-    final seen = <String>{};
+    final indices = <String, int>{
+      for (final k in queues.keys) k: 0,
+    };
 
-    // 1차: 다양성 제약 적용 (동일 메인 최대 _maxPerMain개)
-    for (final entry in scored) {
-      final combo = entry.combo;
-      final key = _comboKey(combo);
-      if (!seen.add(key)) continue;
+    // 라운드로빈: 각 프랜차이즈에서 순서대로 1개씩
+    while (result.length < _maxResults) {
+      var added = false;
+      for (final franchise in queues.keys) {
+        if (result.length >= _maxResults) break;
+        final queue = queues[franchise]!;
+        var idx = indices[franchise]!;
 
-      final mainId = combo.mainItem.id;
-      final count = mainCounts[mainId] ?? 0;
-      if (count >= _maxPerMain) continue;
+        while (idx < queue.length) {
+          final entry = queue[idx];
+          idx++;
 
-      result.add(combo);
-      mainCounts[mainId] = count + 1;
-    }
+          final mainId = entry.combo.mainItem.id;
+          final count = mainCounts[mainId] ?? 0;
+          if (count >= _maxPerMain) continue;
 
-    // 2차: 제약 완화하여 나머지 유니크 조합 추가
-    for (final entry in scored) {
-      final key = _comboKey(entry.combo);
-      if (seen.contains(key)) continue;
-      seen.add(key);
-      result.add(entry.combo);
+          result.add(entry.combo);
+          mainCounts[mainId] = count + 1;
+          added = true;
+          break;
+        }
+        indices[franchise] = idx;
+      }
+      if (!added) break;
     }
 
     return result;

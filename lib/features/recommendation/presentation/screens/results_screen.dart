@@ -137,41 +137,6 @@ class ResultsScreen extends ConsumerWidget {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-            ),
-            child: SegmentedButton<MenuTypeFilter>(
-              segments: const [
-                ButtonSegment(
-                  value: MenuTypeFilter.all,
-                  label: Text('전체'),
-                ),
-                ButtonSegment(
-                  value: MenuTypeFilter.setOnly,
-                  label: Text('세트'),
-                  icon: Icon(Icons.lunch_dining),
-                ),
-                ButtonSegment(
-                  value: MenuTypeFilter.singleOnly,
-                  label: Text('단품'),
-                  icon: Icon(Icons.restaurant),
-                ),
-              ],
-              selected: {menuTypeFilter},
-              onSelectionChanged: (selected) {
-                ref
-                    .read(
-                      selectedMenuTypeFilterProvider.notifier,
-                    )
-                    .setFilter(selected.first);
-                ref
-                    .read(displayedCountStateProvider.notifier)
-                    .reset();
-              },
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
           Expanded(
             child: asyncRecommendations.when(
               loading: () => ListView.builder(
@@ -191,6 +156,11 @@ class ResultsScreen extends ConsumerWidget {
                 ),
               ),
               data: (allRecommendations) {
+                final setCount = allRecommendations
+                    .where((r) => r.isSet)
+                    .length;
+                final singleCount =
+                    allRecommendations.length - setCount;
                 final recommendations = switch (menuTypeFilter)
                 {
                   MenuTypeFilter.all =>
@@ -204,35 +174,21 @@ class ResultsScreen extends ConsumerWidget {
                         .where((r) => !r.isSet)
                         .toList(),
                 };
-                if (recommendations.isEmpty) {
-                  final isFiltered =
-                      menuTypeFilter != MenuTypeFilter.all;
+                if (recommendations.isEmpty &&
+                    allRecommendations.isEmpty) {
                   return EmptyState(
                     icon: Icons.no_meals,
-                    title: isFiltered
-                        ? '${menuTypeFilter == MenuTypeFilter.setOnly ? '세트' : '단품'} 메뉴가 없습니다'
-                        : '추천 가능한 메뉴가 없습니다',
-                    description: isFiltered
-                        ? '필터를 변경하거나 "전체"를 선택해 보세요.'
-                        : personCount > 1
-                            ? '${formatKRW(budget)} ($personCount인) '
-                                '예산으로는 조합을 찾지 못했어요.\n'
-                                '예산을 올리거나 인원을 줄여 보세요.'
-                            : '${formatKRW(budget)} 예산으로는 '
-                                '조합을 찾지 못했어요.\n'
-                                '예산을 올리거나 다른 프랜차이즈를 '
-                                '선택해 보세요.',
-                    actionLabel: isFiltered
-                        ? '전체 보기'
-                        : '예산 조정하기',
-                    onAction: isFiltered
-                        ? () => ref
-                            .read(
-                              selectedMenuTypeFilterProvider
-                                  .notifier,
-                            )
-                            .setFilter(MenuTypeFilter.all)
-                        : () => Navigator.pop(context),
+                    title: '추천 가능한 메뉴가 없습니다',
+                    description: personCount > 1
+                        ? '${formatKRW(budget)} ($personCount인) '
+                            '예산으로는 조합을 찾지 못했어요.\n'
+                            '예산을 올리거나 인원을 줄여 보세요.'
+                        : '${formatKRW(budget)} 예산으로는 '
+                            '조합을 찾지 못했어요.\n'
+                            '예산을 올리거나 다른 프랜차이즈를 '
+                            '선택해 보세요.',
+                    actionLabel: '예산 조정하기',
+                    onAction: () => Navigator.pop(context),
                   );
                 }
                 final displayedCount =
@@ -241,22 +197,87 @@ class ResultsScreen extends ConsumerWidget {
                         displayedCount
                     ? recommendations.sublist(0, displayedCount)
                     : recommendations;
-                final hasMore =
-                    displayedCount < recommendations.length;
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _StaggeredCardList(
-                    key: ValueKey(sortMode),
-                    recommendations: visible,
-                    perPersonBudget: perPersonBudget,
-                    hasMore: hasMore,
-                    onLoadMore: () => ref
-                        .read(
-                          displayedCountStateProvider.notifier,
-                        )
-                        .loadMore(),
-                    onTap: (r) => _showDetail(context, r),
-                  ),
+                final totalCount = recommendations.length;
+                final hasMore = displayedCount < totalCount;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      child: SegmentedButton<MenuTypeFilter>(
+                        segments: [
+                          ButtonSegment(
+                            value: MenuTypeFilter.all,
+                            label: Text(
+                              '전체 (${allRecommendations.length})',
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: MenuTypeFilter.setOnly,
+                            label: Text('세트 ($setCount)'),
+                            icon: const Icon(Icons.lunch_dining),
+                          ),
+                          ButtonSegment(
+                            value: MenuTypeFilter.singleOnly,
+                            label: Text('단품 ($singleCount)'),
+                            icon: const Icon(Icons.restaurant),
+                          ),
+                        ],
+                        selected: {menuTypeFilter},
+                        onSelectionChanged: (selected) {
+                          ref
+                              .read(
+                                selectedMenuTypeFilterProvider
+                                    .notifier,
+                              )
+                              .setFilter(selected.first);
+                          ref
+                              .read(
+                                displayedCountStateProvider
+                                    .notifier,
+                              )
+                              .reset();
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    if (recommendations.isEmpty)
+                      Expanded(
+                        child: EmptyState(
+                          icon: Icons.no_meals,
+                          title:
+                              '${menuTypeFilter == MenuTypeFilter.setOnly ? '세트' : '단품'} 메뉴가 없습니다',
+                          description:
+                              '필터를 변경하거나 "전체"를 선택해 보세요.',
+                          actionLabel: '전체 보기',
+                          onAction: () => ref
+                              .read(
+                                selectedMenuTypeFilterProvider
+                                    .notifier,
+                              )
+                              .setFilter(MenuTypeFilter.all),
+                        ),
+                      )
+                    else
+                    Expanded(
+                      child: _StaggeredCardList(
+                        key: ValueKey(
+                          '$sortMode-$menuTypeFilter',
+                        ),
+                        recommendations: visible,
+                        perPersonBudget: perPersonBudget,
+                        totalCount: totalCount,
+                        hasMore: hasMore,
+                        onLoadMore: () => ref
+                            .read(
+                              displayedCountStateProvider.notifier,
+                            )
+                            .loadMore(totalCount),
+                        onTap: (r) => _showDetail(context, r),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -285,6 +306,7 @@ class _StaggeredCardList extends StatefulWidget {
     super.key,
     required this.recommendations,
     required this.perPersonBudget,
+    required this.totalCount,
     required this.hasMore,
     required this.onLoadMore,
     required this.onTap,
@@ -292,6 +314,7 @@ class _StaggeredCardList extends StatefulWidget {
 
   final List<Recommendation> recommendations;
   final int perPersonBudget;
+  final int totalCount;
   final bool hasMore;
   final VoidCallback onLoadMore;
   final void Function(Recommendation) onTap;
@@ -321,16 +344,25 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
     super.dispose();
   }
 
+  bool _loadingMore = false;
+
   @override
   Widget build(BuildContext context) {
     final count = widget.recommendations.length;
-    final itemCount = count + (widget.hasMore ? 1 : 0);
+    // 항상 footer 1개 추가 (로딩 스피너 또는 결과 요약)
+    final itemCount = count + 1;
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (widget.hasMore &&
+            !_loadingMore &&
             notification.metrics.pixels >=
                 notification.metrics.maxScrollExtent - 200) {
+          _loadingMore = true;
           widget.onLoadMore();
+          // 다음 프레임에서 가드 해제
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _loadingMore = false;
+          });
         }
         return false;
       },
@@ -339,10 +371,26 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
         itemCount: itemCount,
         itemBuilder: (context, index) {
           if (index >= count) {
-            return const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
+            if (widget.hasMore) {
+              return const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Center(
-                child: CircularProgressIndicator(),
+                child: Text(
+                  '${widget.totalCount}개의 추천 조합',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline,
+                  ),
+                ),
               ),
             );
           }
