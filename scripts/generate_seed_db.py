@@ -39,6 +39,8 @@ MENUS = [
     ('mcd_burger_11', 'mcd', '맥치킨 모짜렐라', 'burger', 5000, 670, None, '인기', 0, 0),
     ('mcd_burger_12', 'mcd', '맥치킨', 'burger', 3500, 482, None, '가성비', 0, 0),
     ('mcd_burger_13', 'mcd', '트리플 치즈 버거', 'burger', 6100, 619, None, '프리미엄', 0, 0),
+    ('mcd_burger_14', 'mcd', '치즈버거', 'burger', 3000, 302, None, '가성비', 0, 0),
+    ('mcd_burger_15', 'mcd', '에그 불고기 버거', 'burger', 4200, 430, None, '', 0, 0),
     # Sides
     ('mcd_side_01', 'mcd', '후렌치 후라이 (M)', 'side', 2600, 320, None, '인기', 0, 0),
     ('mcd_side_02', 'mcd', '후렌치 후라이 (L)', 'side', 3200, 400, None, '', 0, 0),
@@ -47,12 +49,15 @@ MENUS = [
     ('mcd_side_05', 'mcd', '황금 모짜렐라 치즈스틱 4조각', 'side', 4500, 340, None, '', 0, 0),
     ('mcd_side_06', 'mcd', '코울슬로', 'side', 1900, 80, None, '', 0, 0),
     ('mcd_side_07', 'mcd', '상하이 치킨 스낵랩', 'side', 3500, 290, None, '', 0, 0),
+    ('mcd_side_08', 'mcd', '맥너겟 10조각', 'side', 5900, 450, None, '', 0, 0),
     # Drinks
     ('mcd_drink_01', 'mcd', '탄산음료 (M)', 'drink', 2000, 140, None, '', 0, 0),
     ('mcd_drink_02', 'mcd', '탄산음료 (L)', 'drink', 2400, 180, None, '', 0, 0),
     ('mcd_drink_03', 'mcd', '밀크쉐이크', 'drink', 2800, 370, None, '', 0, 0),
     ('mcd_drink_04', 'mcd', '아이스 드립 커피', 'drink', 2000, 5, None, '', 0, 0),
     ('mcd_drink_05', 'mcd', '복숭아 아이스티', 'drink', 3100, 120, None, '', 0, 0),
+    ('mcd_drink_06', 'mcd', '바닐라 쉐이크 (M)', 'drink', 3000, 530, None, '', 0, 0),
+    ('mcd_drink_07', 'mcd', '딸기 쉐이크 (M)', 'drink', 3000, 510, None, '', 0, 0),
     # Desserts
     ('mcd_dessert_01', 'mcd', '소프트 아이스크림 콘', 'dessert', 1500, 150, None, '가성비', 0, 0),
     ('mcd_dessert_02', 'mcd', '맥플러리 (오레오)', 'dessert', 3600, 340, None, '인기', 0, 0),
