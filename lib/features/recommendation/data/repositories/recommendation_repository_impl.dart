@@ -268,9 +268,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     final sorted = List<Recommendation>.from(recommendations);
     switch (sort) {
       case SortMode.bestValue:
-        sorted.sort(
-          (a, b) => b.totalPrice.compareTo(a.totalPrice),
-        );
+        // 가성비: 구성 완성도 높을수록 우선 → 같은 구성이면 저렴한 순
+        // 세트(7,600원)가 동일 구성 단품 조합(10,300원)보다 앞에 옴
+        sorted.sort((a, b) {
+          final aComp = _componentCount(a);
+          final bComp = _componentCount(b);
+          if (aComp != bComp) return bComp.compareTo(aComp);
+          return a.totalPrice.compareTo(b.totalPrice);
+        });
       case SortMode.lowestCalories:
         sorted.sort((a, b) {
           final aCal = a.totalCalories ?? 0x7FFFFFFF;
@@ -279,6 +284,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         });
     }
     return sorted;
+  }
+
+  int _componentCount(Recommendation r) {
+    final m = r.mainItem;
+    return 1 +
+        (r.sideItem != null || m.includesSide ? 1 : 0) +
+        (r.drinkItem != null || m.includesDrink ? 1 : 0) +
+        (r.dessertItem != null ? 1 : 0);
   }
 }
 

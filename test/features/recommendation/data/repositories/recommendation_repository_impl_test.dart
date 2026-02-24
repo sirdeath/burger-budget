@@ -84,8 +84,8 @@ void main() {
       expect(result, isA<Success<List<Recommendation>>>());
       final data = (result as Success<List<Recommendation>>).data;
       expect(data, isNotEmpty);
-      // 첫 번째 추천: 가장 비싼 버거(빅맥) 기반
-      expect(data[0].mainItem.name, '빅맥');
+      // 가성비 정렬: 같은 구성이면 저렴한 조합 우선
+      expect(data[0].mainItem.name, '맥치킨');
       expect(data[0].sideItem, isNotNull);
       expect(data[0].drinkItem, isNotNull);
     });
@@ -140,7 +140,8 @@ void main() {
       expect(data[0].drinkItem, isNull);
     });
 
-    test('should sort by bestValue (highest total price first)', () async {
+    test('should sort by bestValue (completeness desc, price asc)',
+        () async {
       when(() => mockDatasource.getCandidates(15000, ['mcd']))
           .thenAnswer((_) async => candidates);
 
@@ -152,10 +153,16 @@ void main() {
 
       final data = (result as Success<List<Recommendation>>).data;
       for (var i = 0; i < data.length - 1; i++) {
-        expect(
-          data[i].totalPrice,
-          greaterThanOrEqualTo(data[i + 1].totalPrice),
-        );
+        final aComp = _componentCount(data[i]);
+        final bComp = _componentCount(data[i + 1]);
+        if (aComp == bComp) {
+          expect(
+            data[i].totalPrice,
+            lessThanOrEqualTo(data[i + 1].totalPrice),
+          );
+        } else {
+          expect(aComp, greaterThan(bComp));
+        }
       }
     });
 
@@ -845,12 +852,12 @@ void main() {
     });
 
     test(
-        'scoring: combo with higher budget utilization ranks above low utilization',
+        'scoring: same component count — cheaper combo ranks first',
         () async {
       // 예산 10000 기준:
-      // - 버거A(9500) → 활용도 95%, 구성 25%  (높음)
-      // - 버거B(3000) → 활용도 30%, 구성 25%  (낮음 + 잔액 페널티)
-      // bestValue 정렬 시 버거A 기반 조합이 먼저 와야 함
+      // - 버거A(9500) → 구성 1개 (버거만)
+      // - 버거B(3000) → 구성 1개 (버거만)
+      // 같은 구성이면 저렴한 게 가성비 → 버거B가 먼저
       const scoringCandidates = [
         MenuItemModel(
           id: 'mcd_a',
@@ -880,9 +887,9 @@ void main() {
 
       final data = (result as Success<List<Recommendation>>).data;
       expect(data, isNotEmpty);
-      // bestValue 정렬 → 총 가격이 높은 것이 먼저 (9500 > 3000)
-      expect(data[0].mainItem.id, 'mcd_a');
-      expect(data[0].totalPrice, greaterThan(data.last.totalPrice));
+      // 같은 1구성 → 저렴한 게 가성비
+      expect(data[0].mainItem.id, 'mcd_b');
+      expect(data[0].totalPrice, lessThan(data.last.totalPrice));
     });
   });
 
@@ -974,4 +981,12 @@ void main() {
       expect(rec.totalCalories, 1000);
     });
   });
+}
+
+int _componentCount(Recommendation r) {
+  final m = r.mainItem;
+  return 1 +
+      (r.sideItem != null || m.includesSide ? 1 : 0) +
+      (r.drinkItem != null || m.includesDrink ? 1 : 0) +
+      (r.dessertItem != null ? 1 : 0);
 }
