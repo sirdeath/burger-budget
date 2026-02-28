@@ -359,11 +359,24 @@ class _MenuItemCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        formatKRW(item.price),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            formatKRW(item.price),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          if (item.deliveryPrice != null)
+                            Text(
+                              '배달 ${formatKRW(item.deliveryPrice!)} (+${formatKRW(item.priceDiff!)})',
+                              style:
+                                  theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),

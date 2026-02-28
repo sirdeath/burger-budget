@@ -31,6 +31,7 @@ class MenuItem {
     required this.name,
     required this.type,
     required this.price,
+    this.deliveryPrice,
     this.priceUpdatedAt,
     this.calories,
     this.imageUrl,
@@ -44,10 +45,15 @@ class MenuItem {
   final String name;
   final MenuType type;
   final int price;
+  final int? deliveryPrice;
   final String? priceUpdatedAt;
   final int? calories;
   final String? imageUrl;
   final List<String> tags;
   final bool includesSide;
   final bool includesDrink;
+
+  /// 배달가와 매장가의 차액. 배달가가 없으면 null.
+  int? get priceDiff =>
+      deliveryPrice != null ? deliveryPrice! - price : null;
 }

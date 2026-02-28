@@ -225,6 +225,7 @@ def generate_db():
             name          TEXT NOT NULL,
             type          TEXT NOT NULL CHECK(type IN ('burger','side','drink','set','dessert')),
             price         INTEGER NOT NULL,
+            price_delivery INTEGER,
             price_updated_at TEXT DEFAULT '2026-02-24',
             calories      INTEGER,
             imageUrl      TEXT,
