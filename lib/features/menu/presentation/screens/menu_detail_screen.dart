@@ -140,22 +140,50 @@ class MenuDetailScreen extends ConsumerWidget {
                   horizontal: AppSpacing.lg,
                   vertical: AppSpacing.md,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    Text(
-                      '총 가격',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '총 가격',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          formatKRW(_totalPrice),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      formatKRW(_totalPrice),
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                    if (menuItem.priceUpdatedAt != null)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: AppSpacing.xs,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.update,
+                              size: 12,
+                              color: theme.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${menuItem.priceUpdatedAt} 기준',
+                              style:
+                                  theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

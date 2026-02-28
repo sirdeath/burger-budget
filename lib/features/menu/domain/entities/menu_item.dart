@@ -31,6 +31,7 @@ class MenuItem {
     required this.name,
     required this.type,
     required this.price,
+    this.priceUpdatedAt,
     this.calories,
     this.imageUrl,
     this.tags = const [],
@@ -43,6 +44,7 @@ class MenuItem {
   final String name;
   final MenuType type;
   final int price;
+  final String? priceUpdatedAt;
   final int? calories;
   final String? imageUrl;
   final List<String> tags;
