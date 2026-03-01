@@ -1,7 +1,7 @@
 {
-  "version": 4,
-  "updatedAt": "2026-02-24T13:16:19.470393Z",
-  "dbUrl": "https://sirdeath.github.io/burger-budget/data/menu_v4.db",
-  "sha256": "deefcc9f99298ac09aeddebc08e7f237b8b2843a4cc854df0f3eafb41c96b5fe",
+  "version": 5,
+  "updatedAt": "2026-03-01T06:12:24.097375Z",
+  "dbUrl": "https://sirdeath.github.io/burger-budget/data/menu_v5.db",
+  "sha256": "9373b858e3167d3e1d4cb57b195308553c2b4fee3aec2eb65fe081ea70ae517f",
   "sizeBytes": 36864
 }
