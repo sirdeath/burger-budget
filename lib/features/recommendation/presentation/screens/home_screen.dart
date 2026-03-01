@@ -169,6 +169,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                     height: AppSpacing.md,
                                   ),
                                   const _PersonCountSelector(),
+                                  const SizedBox(
+                                    height: AppSpacing.md,
+                                  ),
+                                  const _DeliveryModeToggle(),
                                 ],
                               ),
                             ),
@@ -251,6 +255,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DeliveryModeToggle extends ConsumerWidget {
+  const _DeliveryModeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDelivery = ref.watch(deliveryModeStateProvider);
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '주문 방식',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(
+              value: false,
+              label: Text('매장/포장'),
+              icon: Icon(Icons.storefront),
+            ),
+            ButtonSegment(
+              value: true,
+              label: Text('배달'),
+              icon: Icon(Icons.delivery_dining),
+            ),
+          ],
+          selected: {isDelivery},
+          onSelectionChanged: (selected) {
+            HapticFeedback.selectionClick();
+            ref
+                .read(deliveryModeStateProvider.notifier)
+                .setMode(isDelivery: selected.first);
+          },
+        ),
+      ],
     );
   }
 }

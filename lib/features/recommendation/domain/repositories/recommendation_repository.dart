@@ -5,7 +5,8 @@ abstract class RecommendationRepository {
   Future<Result<List<Recommendation>>> getRecommendations({
     required int budget,
     required List<String> franchises,
-    SortMode sort = SortMode.bestValue,
+    SortMode sort = SortMode.recommended,
     int personCount = 1,
+    bool deliveryMode = false,
   });
 }

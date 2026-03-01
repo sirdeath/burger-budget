@@ -13,12 +13,14 @@ class RecommendationCard extends StatelessWidget {
     required this.rank,
     this.budget,
     this.onTap,
+    this.deliveryMode = false,
   });
 
   final Recommendation recommendation;
   final int rank;
   final int? budget;
   final VoidCallback? onTap;
+  final bool deliveryMode;
 
   bool get _isTop => rank == 1;
 
@@ -33,7 +35,12 @@ class RecommendationCard extends StatelessWidget {
       theme.brightness,
     );
 
-    final remaining = budget != null ? budget! - recommendation.totalPrice : 0;
+    final displayPrice = deliveryMode
+        ? (recommendation.totalDeliveryPrice ??
+            recommendation.totalPrice)
+        : recommendation.totalPrice;
+    final remaining =
+        budget != null ? budget! - displayPrice : 0;
     final semanticLabel = '$rank위 ${main.name}, '
         '$franchiseName, '
         '${formatKRW(recommendation.totalPrice)}'
@@ -158,20 +165,52 @@ class RecommendationCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (recommendation.totalCalories != null)
-                            Text(
-                              '${recommendation.totalCalories} kcal',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.outline,
-                              ),
-                            )
-                          else
-                            const SizedBox.shrink(),
+                          Expanded(
+                            child: Wrap(
+                              spacing: AppSpacing.xs,
+                              runSpacing: AppSpacing.xs,
+                              children: [
+                                if (recommendation.totalCalories != null)
+                                  Text(
+                                    '${recommendation.totalCalories} kcal',
+                                    style:
+                                        theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.outline,
+                                    ),
+                                  ),
+                                if (deliveryMode &&
+                                    recommendation.totalPriceDiff !=
+                                        null &&
+                                    recommendation.totalPriceDiff! > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: theme
+                                          .colorScheme.errorContainer,
+                                      borderRadius:
+                                          BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '매장가 대비 +${formatKRW(recommendation.totalPriceDiff!)}',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: theme.colorScheme
+                                            .onErrorContainer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                formatKRW(recommendation.totalPrice),
+                                formatKRW(displayPrice),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.primary,
@@ -182,7 +221,7 @@ class RecommendationCard extends StatelessWidget {
                                 TweenAnimationBuilder<int>(
                                   tween: IntTween(
                                     begin: 0,
-                                    end: budget! - recommendation.totalPrice,
+                                    end: budget! - displayPrice,
                                   ),
                                   duration: const Duration(milliseconds: 600),
                                   curve: Curves.easeOutCubic,
@@ -199,6 +238,16 @@ class RecommendationCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (main.priceUpdatedAt != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: _PriceDateLabel(
+                            date: main.priceUpdatedAt!,
+                            theme: theme,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -320,3 +369,31 @@ class _SubItemChip extends StatelessWidget {
     );
   }
 }
+
+class _PriceDateLabel extends StatelessWidget {
+  const _PriceDateLabel({
+    required this.date,
+    required this.theme,
+  });
+
+  final String date;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed = DateTime.tryParse(date);
+    final isStale = parsed != null &&
+        DateTime.now().difference(parsed).inDays > 30;
+
+    return Text(
+      isStale ? '\u26A0 $date 기준' : '$date 기준',
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: isStale
+            ? theme.colorScheme.error
+            : theme.colorScheme.outline,
+        fontSize: 10,
+      ),
+    );
+  }
+}
+

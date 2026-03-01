@@ -23,8 +23,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   Future<Result<List<Recommendation>>> getRecommendations({
     required int budget,
     required List<String> franchises,
-    SortMode sort = SortMode.bestValue,
+    SortMode sort = SortMode.recommended,
     int personCount = 1,
+    bool deliveryMode = false,
   }) async {
     try {
       final perPersonBudget =
@@ -32,22 +33,33 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       final candidates = await _datasource.getCandidates(
         perPersonBudget,
         franchises,
+        deliveryMode: deliveryMode,
       );
       final combos =
-          _buildAllCombos(candidates, perPersonBudget);
+          _buildAllCombos(candidates, perPersonBudget, deliveryMode);
       final diverse = _selectDiverse(combos);
-      final sorted = _applySortMode(diverse, sort);
+      final sorted = _applySortMode(
+        diverse,
+        sort,
+        perPersonBudget,
+        deliveryMode,
+      );
       return Success(sorted);
     } on Exception catch (e) {
       return Failure('추천 생성 실패', e);
     }
   }
 
+  /// 배달 모드면 deliveryPrice, 없으면 매장가 폴백
+  static int _itemPrice(MenuItem item, bool deliveryMode) =>
+      deliveryMode ? (item.deliveryPrice ?? item.price) : item.price;
+
   // ── 1단계: 모든 가능한 조합 생성 + 점수 산정 ──
 
   List<_ScoredCombo> _buildAllCombos(
     List<MenuItem> candidates,
     int budget,
+    bool deliveryMode,
   ) {
     // 프랜차이즈별 그룹핑 → 같은 가게 메뉴끼리만 조합
     final byFranchise = <String, List<MenuItem>>{};
@@ -77,7 +89,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           .toList();
 
       for (final setItem in sets) {
-        if (setItem.price > budget) continue;
+        if (_itemPrice(setItem, deliveryMode) > budget) continue;
         _generateCombos(
           scored,
           setItem,
@@ -85,13 +97,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           drinks,
           desserts,
           budget,
+          deliveryMode: deliveryMode,
           skipSide: setItem.includesSide,
           skipDrink: setItem.includesDrink,
         );
       }
 
       for (final burger in burgers) {
-        if (burger.price > budget) continue;
+        if (_itemPrice(burger, deliveryMode) > budget) continue;
         _generateCombos(
           scored,
           burger,
@@ -99,6 +112,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           drinks,
           desserts,
           budget,
+          deliveryMode: deliveryMode,
         );
       }
     }
@@ -113,10 +127,12 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     List<MenuItem> drinks,
     List<MenuItem> desserts,
     int budget, {
+    bool deliveryMode = false,
     bool skipSide = false,
     bool skipDrink = false,
   }) {
-    final remaining = budget - mainItem.price;
+    final remaining =
+        budget - _itemPrice(mainItem, deliveryMode);
 
     // 사이드 후보: null(미선택) + 가격 내 상위 N개
     final sideOptions = skipSide
@@ -124,12 +140,15 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         : <MenuItem?>[
             null,
             ...sides
-                .where((s) => s.price <= remaining)
+                .where(
+                  (s) => _itemPrice(s, deliveryMode) <= remaining,
+                )
                 .take(_maxSideOptions),
           ];
 
     for (final side in sideOptions) {
-      final afterSide = remaining - (side?.price ?? 0);
+      final afterSide =
+          remaining - (side != null ? _itemPrice(side, deliveryMode) : 0);
 
       // 음료 후보: null(미선택) + 남은 예산 내 상위 N개
       final drinkOptions = skipDrink
@@ -137,17 +156,21 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           : <MenuItem?>[
               null,
               ...drinks
-                  .where((d) => d.price <= afterSide)
+                  .where(
+                    (d) =>
+                        _itemPrice(d, deliveryMode) <= afterSide,
+                  )
                   .take(_maxDrinkOptions),
             ];
 
       for (final drink in drinkOptions) {
-        final afterDrink = afterSide - (drink?.price ?? 0);
+        final afterDrink = afterSide -
+            (drink != null ? _itemPrice(drink, deliveryMode) : 0);
 
         // 디저트: 남은 예산 내 가장 비싼 하나
         MenuItem? dessert;
         for (final d in desserts) {
-          if (d.price <= afterDrink) {
+          if (_itemPrice(d, deliveryMode) <= afterDrink) {
             dessert = d;
             break;
           }
@@ -162,7 +185,8 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           dessertItem: dessert,
         );
 
-        final score = _scoreCombo(combo, budget);
+        final score =
+            _scoreCombo(combo, budget, deliveryMode);
         results.add(_ScoredCombo(combo, score));
       }
     }
@@ -174,10 +198,24 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   // 구성 완성도 (30%): 메인+사이드+음료+디저트 (세트 포함분 인정)
   // 잔액 페널티 (15%): 예산의 30% 이상 남으면 감점
 
-  double _scoreCombo(Recommendation combo, int budget) {
+  /// 조합의 실효 가격 (배달 모드면 배달가, 아니면 매장가)
+  static int _comboPrice(
+    Recommendation combo,
+    bool deliveryMode,
+  ) =>
+      deliveryMode
+          ? (combo.totalDeliveryPrice ?? combo.totalPrice)
+          : combo.totalPrice;
+
+  double _scoreCombo(
+    Recommendation combo,
+    int budget,
+    bool deliveryMode,
+  ) {
     if (budget <= 0) return 0;
 
-    final utilization = combo.totalPrice / budget;
+    final utilization =
+        _comboPrice(combo, deliveryMode) / budget;
     final main = combo.mainItem;
     final componentCount = 1 +
         (combo.sideItem != null || main.includesSide ? 1 : 0) +
@@ -264,17 +302,26 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   List<Recommendation> _applySortMode(
     List<Recommendation> recommendations,
     SortMode sort,
+    int budget,
+    bool deliveryMode,
   ) {
     final sorted = List<Recommendation>.from(recommendations);
     switch (sort) {
-      case SortMode.bestValue:
-        // 가성비: 구성 완성도 높을수록 우선 → 같은 구성이면 저렴한 순
-        // 세트(7,600원)가 동일 구성 단품 조합(10,300원)보다 앞에 옴
+      case SortMode.recommended:
+        sorted.sort((a, b) {
+          final aScore =
+              _recommendedScore(a, budget, deliveryMode);
+          final bScore =
+              _recommendedScore(b, budget, deliveryMode);
+          return bScore.compareTo(aScore);
+        });
+      case SortMode.saving:
         sorted.sort((a, b) {
           final aComp = _componentCount(a);
           final bComp = _componentCount(b);
           if (aComp != bComp) return bComp.compareTo(aComp);
-          return a.totalPrice.compareTo(b.totalPrice);
+          return _comboPrice(a, deliveryMode)
+              .compareTo(_comboPrice(b, deliveryMode));
         });
       case SortMode.lowestCalories:
         sorted.sort((a, b) {
@@ -284,6 +331,23 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         });
     }
     return sorted;
+  }
+
+  /// 추천 순 점수: 예산 활용도(60%) + 시그니쳐 보너스(25%) + 구성(15%)
+  double _recommendedScore(
+    Recommendation r,
+    int budget,
+    bool deliveryMode,
+  ) {
+    if (budget <= 0) return 0;
+    final utilization =
+        (_comboPrice(r, deliveryMode) / budget).clamp(0.0, 1.0);
+    final isSignature =
+        r.mainItem.tags.contains('시그니처') ? 1.0 : 0.0;
+    final completeness = _componentCount(r) / 4.0;
+    return utilization * 0.60 +
+        isSignature * 0.25 +
+        completeness * 0.15;
   }
 
   int _componentCount(Recommendation r) {

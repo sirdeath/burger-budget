@@ -14,7 +14,7 @@ void main() {
   late GetRecommendations usecase;
 
   setUpAll(() {
-    registerFallbackValue(SortMode.bestValue);
+    registerFallbackValue(SortMode.recommended);
   });
 
   setUp(() {
@@ -56,7 +56,7 @@ void main() {
       when(() => mockRepository.getRecommendations(
             budget: 10000,
             franchises: ['mcd'],
-            sort: SortMode.bestValue,
+            sort: SortMode.recommended,
           )).thenAnswer((_) async => Success(testRecommendations));
 
       final result = await usecase(
@@ -73,7 +73,7 @@ void main() {
       verify(() => mockRepository.getRecommendations(
             budget: 10000,
             franchises: ['mcd'],
-            sort: SortMode.bestValue,
+            sort: SortMode.recommended,
           )).called(1);
     });
 

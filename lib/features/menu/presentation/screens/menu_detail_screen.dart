@@ -21,12 +21,14 @@ class MenuDetailScreen extends ConsumerWidget {
     this.sideItem,
     this.drinkItem,
     this.dessertItem,
+    this.deliveryMode = false,
   });
 
   final MenuItem menuItem;
   final MenuItem? sideItem;
   final MenuItem? drinkItem;
   final MenuItem? dessertItem;
+  final bool deliveryMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,13 +148,17 @@ class MenuDetailScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '총 가격',
+                          deliveryMode ? '배달 총가격' : '총 가격',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          formatKRW(_totalPrice),
+                          formatKRW(
+                            deliveryMode
+                                ? (_totalDeliveryPrice ?? _totalPrice)
+                                : _totalPrice,
+                          ),
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.primary,
@@ -160,6 +166,31 @@ class MenuDetailScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    if (deliveryMode &&
+                        _totalDeliveryPrice != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '매장가 ${formatKRW(_totalPrice)}',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]
+                    else if (!deliveryMode &&
+                        _totalDeliveryPrice != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      _DeliveryTotalRow(
+                        deliveryTotal: _totalDeliveryPrice!,
+                        storeTotal: _totalPrice,
+                        theme: theme,
+                      ),
+                    ],
                     if (menuItem.priceUpdatedAt != null)
                       Padding(
                         padding: const EdgeInsets.only(
@@ -262,6 +293,16 @@ class MenuDetailScreen extends ConsumerWidget {
       (sideItem?.price ?? 0) +
       (drinkItem?.price ?? 0) +
       (dessertItem?.price ?? 0);
+
+  /// 배달 총가격. 메인의 배달가가 없으면 null.
+  int? get _totalDeliveryPrice {
+    final mainDel = menuItem.deliveryPrice;
+    if (mainDel == null) return null;
+    return mainDel +
+        (sideItem?.deliveryPrice ?? sideItem?.price ?? 0) +
+        (drinkItem?.deliveryPrice ?? drinkItem?.price ?? 0) +
+        (dessertItem?.deliveryPrice ?? dessertItem?.price ?? 0);
+  }
 }
 
 class _FranchiseBadge extends StatelessWidget {
@@ -450,6 +491,69 @@ class _InfoChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DeliveryTotalRow extends StatelessWidget {
+  const _DeliveryTotalRow({
+    required this.deliveryTotal,
+    required this.storeTotal,
+    required this.theme,
+  });
+
+  final int deliveryTotal;
+  final int storeTotal;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = deliveryTotal - storeTotal;
+    final diffPercent =
+        storeTotal > 0 ? (diff / storeTotal * 100).round() : 0;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.delivery_dining,
+              size: 16,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '배달 총가격',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              formatKRW(deliveryTotal),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (diff > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '(+${formatKRW(diff)}, +$diffPercent%)',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }

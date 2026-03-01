@@ -30,13 +30,14 @@ class ResultsScreen extends ConsumerWidget {
     final sortMode = ref.watch(selectedSortModeProvider);
     final menuTypeFilter =
         ref.watch(selectedMenuTypeFilterProvider);
+    final isDelivery =
+        ref.watch(deliveryModeStateProvider);
     final perPersonBudget =
         personCount > 1 ? budget ~/ personCount : budget;
     final asyncRecommendations = ref.watch(
       recommendationsProvider(
         budget: budget,
         franchises: franchises,
-        sort: sortMode,
         personCount: personCount,
       ),
     );
@@ -111,18 +112,74 @@ class ResultsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isDelivery
+                      ? Icons.delivery_dining
+                      : Icons.storefront,
+                  size: 16,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  isDelivery ? '배달' : '매장/포장',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SizedBox(
+                  height: 28,
+                  child: Switch.adaptive(
+                    value: isDelivery,
+                    onChanged: (value) {
+                      ref
+                          .read(
+                            deliveryModeStateProvider.notifier,
+                          )
+                          .setMode(isDelivery: value);
+                      ref
+                          .read(
+                            displayedCountStateProvider
+                                .notifier,
+                          )
+                          .reset();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
             ),
             child: SegmentedButton<SortMode>(
               segments: const [
                 ButtonSegment(
-                  value: SortMode.bestValue,
-                  label: Text('가성비 순'),
-                  icon: Icon(Icons.trending_up),
+                  value: SortMode.recommended,
+                  label: Text('추천 순'),
+                  icon: Icon(Icons.stars),
+                ),
+                ButtonSegment(
+                  value: SortMode.saving,
+                  label: Text('절약 순'),
+                  icon: Icon(Icons.savings),
                 ),
                 ButtonSegment(
                   value: SortMode.lowestCalories,
-                  label: Text('칼로리 낮은 순'),
+                  label: Text('칼로리'),
                   icon: Icon(Icons.local_fire_department),
                 ),
               ],
@@ -139,18 +196,28 @@ class ResultsScreen extends ConsumerWidget {
           ),
           Expanded(
             child: asyncRecommendations.when(
-              loading: () => ListView.builder(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                itemCount: 3,
-                itemBuilder: (_, _) => const SkeletonCard(),
-              ),
+              loading: () =>
+                  asyncRecommendations.hasValue
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacing.lg),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.md,
+                          ),
+                          itemCount: 3,
+                          itemBuilder: (_, _) =>
+                              const SkeletonCard(),
+                        ),
               error: (error, _) => ErrorView(
                 message: '$error',
                 onRetry: () => ref.invalidate(
                   recommendationsProvider(
                     budget: budget,
                     franchises: franchises,
-                    sort: sortMode,
                     personCount: personCount,
                   ),
                 ),
@@ -269,12 +336,17 @@ class ResultsScreen extends ConsumerWidget {
                         perPersonBudget: perPersonBudget,
                         totalCount: totalCount,
                         hasMore: hasMore,
+                        deliveryMode: isDelivery,
                         onLoadMore: () => ref
                             .read(
                               displayedCountStateProvider.notifier,
                             )
                             .loadMore(totalCount),
-                        onTap: (r) => _showDetail(context, r),
+                        onTap: (r) => _showDetail(
+                          context,
+                          r,
+                          isDelivery,
+                        ),
                       ),
                     ),
                   ],
@@ -287,7 +359,11 @@ class ResultsScreen extends ConsumerWidget {
     );
   }
 
-  void _showDetail(BuildContext context, Recommendation recommendation) {
+  void _showDetail(
+    BuildContext context,
+    Recommendation recommendation,
+    bool deliveryMode,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -296,6 +372,7 @@ class ResultsScreen extends ConsumerWidget {
         sideItem: recommendation.sideItem,
         drinkItem: recommendation.drinkItem,
         dessertItem: recommendation.dessertItem,
+        deliveryMode: deliveryMode,
       ),
     );
   }
@@ -310,6 +387,7 @@ class _StaggeredCardList extends StatefulWidget {
     required this.hasMore,
     required this.onLoadMore,
     required this.onTap,
+    this.deliveryMode = false,
   });
 
   final List<Recommendation> recommendations;
@@ -318,6 +396,7 @@ class _StaggeredCardList extends StatefulWidget {
   final bool hasMore;
   final VoidCallback onLoadMore;
   final void Function(Recommendation) onTap;
+  final bool deliveryMode;
 
   @override
   State<_StaggeredCardList> createState() => _StaggeredCardListState();
@@ -416,6 +495,7 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
                   recommendation: widget.recommendations[index],
                   rank: index + 1,
                   budget: widget.perPersonBudget,
+                  deliveryMode: widget.deliveryMode,
                   onTap: () =>
                       widget.onTap(widget.recommendations[index]),
                 ),

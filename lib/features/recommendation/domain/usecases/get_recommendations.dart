@@ -10,14 +10,16 @@ class GetRecommendations {
   Future<Result<List<Recommendation>>> call({
     required int budget,
     required List<String> franchises,
-    SortMode sort = SortMode.bestValue,
+    SortMode sort = SortMode.recommended,
     int personCount = 1,
+    bool deliveryMode = false,
   }) {
     return _repository.getRecommendations(
       budget: budget,
       franchises: franchises,
       sort: sort,
       personCount: personCount,
+      deliveryMode: deliveryMode,
     );
   }
 }

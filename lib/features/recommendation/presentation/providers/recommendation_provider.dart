@@ -47,7 +47,7 @@ class SelectedFranchises extends _$SelectedFranchises {
 @riverpod
 class SelectedSortMode extends _$SelectedSortMode {
   @override
-  SortMode build() => SortMode.bestValue;
+  SortMode build() => SortMode.recommended;
 
   void setSortMode(SortMode mode) {
     state = mode;
@@ -62,6 +62,16 @@ class PersonCountState extends _$PersonCountState {
   void setCount(int count) {
     state = count.clamp(1, 4);
   }
+}
+
+@riverpod
+class DeliveryModeState extends _$DeliveryModeState {
+  @override
+  bool build() => false;
+
+  void toggle() => state = !state;
+
+  void setMode({required bool isDelivery}) => state = isDelivery;
 }
 
 enum MenuTypeFilter { all, setOnly, singleOnly }
@@ -96,15 +106,17 @@ Future<List<Recommendation>> recommendations(
   Ref ref, {
   required int budget,
   required List<String> franchises,
-  SortMode sort = SortMode.bestValue,
   int personCount = 1,
 }) async {
+  final sort = ref.watch(selectedSortModeProvider);
+  final deliveryMode = ref.watch(deliveryModeStateProvider);
   final repository = ref.watch(recommendationRepositoryProvider);
   final result = await repository.getRecommendations(
     budget: budget,
     franchises: franchises,
     sort: sort,
     personCount: personCount,
+    deliveryMode: deliveryMode,
   );
   return switch (result) {
     Success(data: final items) => items,

@@ -8,15 +8,30 @@ class RecommendationDatasource {
 
   Future<List<MenuItemModel>> getCandidates(
     int budget,
-    List<String> franchises,
-  ) async {
+    List<String> franchises, {
+    bool deliveryMode = false,
+  }) async {
     final db = await _dbHelper.database;
-    final placeholders = List.filled(franchises.length, '?').join(',');
+    final placeholders =
+        List.filled(franchises.length, '?').join(',');
+
+    final String where;
+    final String orderBy;
+    if (deliveryMode) {
+      where = 'franchise IN ($placeholders) '
+          'AND price_delivery IS NOT NULL '
+          'AND price_delivery <= ?';
+      orderBy = 'price_delivery DESC';
+    } else {
+      where = 'franchise IN ($placeholders) AND price <= ?';
+      orderBy = 'price DESC';
+    }
+
     final result = await db.query(
       'menus',
-      where: 'franchise IN ($placeholders) AND price <= ?',
+      where: where,
       whereArgs: [...franchises, budget],
-      orderBy: 'price DESC',
+      orderBy: orderBy,
     );
     return result.map(MenuItemModel.fromMap).toList();
   }

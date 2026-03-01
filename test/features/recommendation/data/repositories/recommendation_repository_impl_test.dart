@@ -79,12 +79,13 @@ void main() {
       final result = await repository.getRecommendations(
         budget: 15000,
         franchises: ['mcd'],
+        sort: SortMode.saving,
       );
 
       expect(result, isA<Success<List<Recommendation>>>());
       final data = (result as Success<List<Recommendation>>).data;
       expect(data, isNotEmpty);
-      // 가성비 정렬: 같은 구성이면 저렴한 조합 우선
+      // 절약 정렬: 같은 구성이면 저렴한 조합 우선
       expect(data[0].mainItem.name, '맥치킨');
       expect(data[0].sideItem, isNotNull);
       expect(data[0].drinkItem, isNotNull);
@@ -140,7 +141,7 @@ void main() {
       expect(data[0].drinkItem, isNull);
     });
 
-    test('should sort by bestValue (completeness desc, price asc)',
+    test('should sort by saving (completeness desc, price asc)',
         () async {
       when(() => mockDatasource.getCandidates(15000, ['mcd']))
           .thenAnswer((_) async => candidates);
@@ -148,7 +149,7 @@ void main() {
       final result = await repository.getRecommendations(
         budget: 15000,
         franchises: ['mcd'],
-        sort: SortMode.bestValue,
+        sort: SortMode.saving,
       );
 
       final data = (result as Success<List<Recommendation>>).data;
@@ -882,12 +883,12 @@ void main() {
       final result = await repository.getRecommendations(
         budget: 10000,
         franchises: ['mcd'],
-        sort: SortMode.bestValue,
+        sort: SortMode.saving,
       );
 
       final data = (result as Success<List<Recommendation>>).data;
       expect(data, isNotEmpty);
-      // 같은 1구성 → 저렴한 게 가성비
+      // 같은 1구성 → 저렴한 게 절약
       expect(data[0].mainItem.id, 'mcd_b');
       expect(data[0].totalPrice, lessThan(data.last.totalPrice));
     });
