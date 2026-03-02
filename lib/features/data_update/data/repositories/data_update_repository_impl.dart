@@ -18,9 +18,16 @@ class DataUpdateRepositoryImpl implements DataUpdateRepository {
   final DatabaseHelper _dbHelper;
 
   @override
-  Future<int> getLocalVersion() async {
+  Future<String> getLocalVersion() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(AppConstants.dbVersionKey) ?? 0;
+    try {
+      return prefs.getString(AppConstants.dbVersionKey) ??
+          AppConstants.seedDbVersion;
+    } on TypeError {
+      // 기존 int 저장값 → String 마이그레이션
+      await prefs.remove(AppConstants.dbVersionKey);
+      return AppConstants.seedDbVersion;
+    }
   }
 
   @override
@@ -28,7 +35,9 @@ class DataUpdateRepositoryImpl implements DataUpdateRepository {
     try {
       final manifest = await _remoteDatasource.fetchManifest();
       final localVersion = await getLocalVersion();
-      return Success(manifest.version > localVersion);
+      return Success(
+        _compareVersions(manifest.version, localVersion) > 0,
+      );
     } on Exception catch (e) {
       return Failure('업데이트 확인 실패', e);
     }
@@ -40,7 +49,7 @@ class DataUpdateRepositoryImpl implements DataUpdateRepository {
       final manifest = await _remoteDatasource.fetchManifest();
       final localVersion = await getLocalVersion();
 
-      if (manifest.version <= localVersion) {
+      if (_compareVersions(manifest.version, localVersion) <= 0) {
         return const Success(null);
       }
 
@@ -60,11 +69,23 @@ class DataUpdateRepositoryImpl implements DataUpdateRepository {
       await _dbHelper.replaceDatabase(tempPath);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(AppConstants.dbVersionKey, manifest.version);
+      await prefs.setString(
+        AppConstants.dbVersionKey,
+        manifest.version,
+      );
 
       return const Success(null);
     } on Exception catch (e) {
       return Failure('데이터 업데이트 실패', e);
     }
+  }
+
+  static int _compareVersions(String a, String b) {
+    final aParts = a.split('.').map(int.parse).toList();
+    final bParts = b.split('.').map(int.parse).toList();
+    if (aParts[0] != bParts[0]) {
+      return aParts[0].compareTo(bParts[0]);
+    }
+    return aParts[1].compareTo(bParts[1]);
   }
 }

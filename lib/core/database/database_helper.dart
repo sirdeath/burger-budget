@@ -12,7 +12,7 @@ class DatabaseHelper {
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
 
-  static const _seedVersionKey = 'seed_db_version';
+  static const _versionKey = 'db_version';
 
   Database? _database;
 
@@ -31,19 +31,39 @@ class DatabaseHelper {
     final path = await _dbPath;
     final exists = await File(path).exists();
     final prefs = await SharedPreferences.getInstance();
-    final storedVersion = prefs.getInt(_seedVersionKey) ?? 0;
-    final needsRefresh =
-        !exists || storedVersion < AppConstants.seedDbVersion;
+    String storedVersion;
+    try {
+      storedVersion =
+          prefs.getString(_versionKey) ?? '0.0';
+    } on TypeError {
+      await prefs.remove(_versionKey);
+      storedVersion = '0.0';
+    }
+    final needsRefresh = !exists ||
+        _compareVersions(
+              storedVersion,
+              AppConstants.seedDbVersion,
+            ) <
+            0;
 
     if (needsRefresh) {
       await _copySeedDatabase(path);
-      await prefs.setInt(
-        _seedVersionKey,
+      await prefs.setString(
+        _versionKey,
         AppConstants.seedDbVersion,
       );
     }
 
     return openDatabase(path, readOnly: false);
+  }
+
+  static int _compareVersions(String a, String b) {
+    final aParts = a.split('.').map(int.parse).toList();
+    final bParts = b.split('.').map(int.parse).toList();
+    if (aParts[0] != bParts[0]) {
+      return aParts[0].compareTo(bParts[0]);
+    }
+    return aParts[1].compareTo(bParts[1]);
   }
 
   Future<void> _copySeedDatabase(String destPath) async {

@@ -135,7 +135,7 @@ class FakeDataUpdateRepository implements DataUpdateRepository {
   Future<Result<void>> downloadAndApply() async => const Success(null);
 
   @override
-  Future<int> getLocalVersion() async => 2;
+  Future<String> getLocalVersion() async => '1.1';
 }
 
 class FakeFavoriteRepository implements FavoriteRepository {

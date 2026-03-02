@@ -10,9 +10,13 @@ enum UpdateStatus { idle, checking, downloading, success, error }
 @riverpod
 class DataUpdateNotifier extends _$DataUpdateNotifier {
   @override
-  ({UpdateStatus status, String? message, int localVersion}) build() {
+  ({UpdateStatus status, String? message, String localVersion}) build() {
     _loadVersion();
-    return (status: UpdateStatus.idle, message: null, localVersion: 0);
+    return (
+      status: UpdateStatus.idle,
+      message: null,
+      localVersion: '0.0',
+    );
   }
 
   Future<void> _loadVersion() async {

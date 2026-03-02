@@ -16,7 +16,7 @@ class ManifestData {
     required this.sizeBytes,
   });
 
-  final int version;
+  final String version;
   final String updatedAt;
   final String dbUrl;
   final String sha256Hash;
@@ -24,7 +24,7 @@ class ManifestData {
 
   factory ManifestData.fromJson(Map<String, dynamic> json) {
     return ManifestData(
-      version: json['version'] as int,
+      version: json['version'].toString(),
       updatedAt: json['updatedAt'] as String,
       dbUrl: json['dbUrl'] as String,
       sha256Hash: json['sha256'] as String,
