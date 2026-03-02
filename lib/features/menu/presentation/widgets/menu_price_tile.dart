@@ -104,23 +104,13 @@ class MenuPriceTile extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (hasDelivery)
+                  if (hasDelivery && diff != null && diff > 0)
                     Text(
                       '배달 ${formatKRW(item.deliveryPrice!)}'
-                      '${diff != null && diff > 0 ? ' (+${formatKRW(diff)})' : ''}',
+                      ' (+${formatKRW(diff)})',
                       style: theme.textTheme.labelSmall
                           ?.copyWith(
-                        color: diff != null && diff > 0
-                            ? theme.colorScheme.error
-                            : theme.colorScheme.outline,
-                      ),
-                    )
-                  else
-                    Text(
-                      '매장전용',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: theme.colorScheme.error,
                       ),
                     ),
                 ],

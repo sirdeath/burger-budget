@@ -27,6 +27,30 @@ class _MenuBoardScreenState
     super.dispose();
   }
 
+  void _showPriceInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('가격 안내'),
+        content: const Text(
+          '메뉴판의 가격 정보는 각 프랜차이즈 공식 앱에서'
+          ' 직접 확인하여 수집한 데이터입니다.\n\n'
+          '가격 업데이트 일자가 표기되어 있으며,'
+          ' 업데이트가 늦어져 실제 가격과 차이가'
+          ' 있을 수 있습니다.\n\n'
+          '차이가 발견되면 빠르게 반영하겠습니다.'
+          ' 양해 부탁드립니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -36,6 +60,13 @@ class _MenuBoardScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('메뉴판'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: '가격 안내',
+            onPressed: () => _showPriceInfo(context),
+          ),
+        ],
       ),
       body: Column(
         children: [

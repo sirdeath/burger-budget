@@ -38,6 +38,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description: '예산 내에서 가장 만족스러운\n'
           '버거+사이드+음료 조합을 추천해드려요.',
     ),
+    _OnboardingPageData(
+      icon: Icons.menu_book,
+      title: '메뉴판으로 가격 비교',
+      description: '브랜드별 전체 메뉴와 가격을 한눈에!\n'
+          '카테고리별 비교로 최저가를 찾아보세요.',
+    ),
   ];
 
   @override

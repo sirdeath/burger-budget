@@ -47,7 +47,11 @@ void main() {
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();
 
-      expect(find.text('최적 조합을 추천받으세요'), findsOneWidget);
+      // Go to page 4 (last)
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('메뉴판으로 가격 비교'), findsOneWidget);
       expect(find.text('시작하기'), findsOneWidget);
     });
 
@@ -67,6 +71,8 @@ void main() {
       await tester.pumpWidget(buildApp());
 
       // Navigate to last page
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('다음'));
@@ -105,12 +111,12 @@ void main() {
     testWidgets('page indicator shows correct count', (tester) async {
       await tester.pumpWidget(buildApp());
 
-      // 3 indicator dots (AnimatedContainer)
+      // 4 indicator dots (AnimatedContainer)
       final indicators = find.descendant(
         of: find.byType(Row),
         matching: find.byType(AnimatedContainer),
       );
-      expect(indicators, findsNWidgets(3));
+      expect(indicators, findsNWidgets(4));
     });
   });
 }

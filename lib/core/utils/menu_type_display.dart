@@ -8,9 +8,9 @@ class MenuTypeDisplay {
   static IconData icon(MenuType type) {
     return switch (type) {
       MenuType.burger => Icons.lunch_dining,
-      MenuType.side => Icons.fastfood,
+      MenuType.side => Icons.takeout_dining,
       MenuType.drink => Icons.local_cafe,
-      MenuType.set_ => Icons.restaurant_menu,
+      MenuType.set_ => Icons.fastfood,
       MenuType.dessert => Icons.icecream,
     };
   }
