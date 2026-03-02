@@ -333,7 +333,8 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     return sorted;
   }
 
-  /// 추천 순 점수: 예산 활용도(60%) + 시그니쳐 보너스(25%) + 구성(15%)
+  /// 추천 순 점수:
+  /// 예산 활용도(45%) + 세트 보너스(20%) + 시그니쳐(20%) + 구성(15%)
   double _recommendedScore(
     Recommendation r,
     int budget,
@@ -342,11 +343,13 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     if (budget <= 0) return 0;
     final utilization =
         (_comboPrice(r, deliveryMode) / budget).clamp(0.0, 1.0);
+    final setBonus = r.isSet ? 1.0 : 0.0;
     final isSignature =
         r.mainItem.tags.contains('시그니처') ? 1.0 : 0.0;
     final completeness = _componentCount(r) / 4.0;
-    return utilization * 0.60 +
-        isSignature * 0.25 +
+    return utilization * 0.45 +
+        setBonus * 0.20 +
+        isSignature * 0.20 +
         completeness * 0.15;
   }
 
