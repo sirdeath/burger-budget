@@ -194,9 +194,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
   // ── 2단계: 점수 산정 ──
   //
-  // 예산 활용도 (55%): 예산 대비 총 가격 비율
-  // 구성 완성도 (30%): 메인+사이드+음료+디저트 (세트 포함분 인정)
-  // 잔액 페널티 (15%): 예산의 30% 이상 남으면 감점
+  // 식사 완성도 (55%): 메인+사이드+음료 = 한 끼 (세트 포함분 인정)
+  // 예산 활용도 (35%): 예산의 60% 이상 쓰면 만점 (과도한 채우기 방지)
+  // 디저트 보너스 (10%): 있으면 가산
 
   /// 조합의 실효 가격 (배달 모드면 배달가, 아니면 매장가)
   static int _comboPrice(
@@ -214,21 +214,29 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   ) {
     if (budget <= 0) return 0;
 
-    final utilization =
-        _comboPrice(combo, deliveryMode) / budget;
+    final rawUtil =
+        (_comboPrice(combo, deliveryMode) / budget)
+            .clamp(0.0, 1.0);
+    // 예산의 60% 이상 쓰면 만점 — 예산 채우기 경쟁 방지
+    final utilization = (rawUtil / 0.6).clamp(0.0, 1.0);
+
     final main = combo.mainItem;
-    final componentCount = 1 +
-        (combo.sideItem != null || main.includesSide ? 1 : 0) +
-        (combo.drinkItem != null || main.includesDrink ? 1 : 0) +
-        (combo.dessertItem != null ? 1 : 0);
-    final completeness = componentCount / 4.0;
+    // 식사 완성도: 메인+사이드+음료 = 한 끼 (3/3 만점)
+    // 디저트는 보너스로만 취급
+    final mealCount = 1 +
+        (combo.sideItem != null || main.includesSide
+            ? 1
+            : 0) +
+        (combo.drinkItem != null || main.includesDrink
+            ? 1
+            : 0);
+    final mealCompleteness = mealCount / 3.0;
+    final dessertBonus =
+        combo.dessertItem != null ? 1.0 : 0.0;
 
-    final leftover = 1.0 - utilization;
-    final leftoverPenalty = leftover > 0.3 ? (leftover - 0.3) : 0.0;
-
-    return utilization * 0.55 +
-        completeness * 0.30 -
-        leftoverPenalty * 0.15;
+    return utilization * 0.35 +
+        mealCompleteness * 0.55 +
+        dessertBonus * 0.10;
   }
 
   // ── 3단계: 다양성 보장 선택 (프랜차이즈 라운드로빈) ──
@@ -316,49 +324,59 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           return bScore.compareTo(aScore);
         });
       case SortMode.saving:
+        // 절약순: 가격 오름차순 (적게 쓸수록 상위)
         sorted.sort((a, b) {
-          final aComp = _componentCount(a);
-          final bComp = _componentCount(b);
-          if (aComp != bComp) return bComp.compareTo(aComp);
           return _comboPrice(a, deliveryMode)
               .compareTo(_comboPrice(b, deliveryMode));
         });
       case SortMode.lowestCalories:
         sorted.sort((a, b) {
-          final aCal = a.totalCalories ?? 0x7FFFFFFF;
-          final bCal = b.totalCalories ?? 0x7FFFFFFF;
-          return aCal.compareTo(bCal);
+          final aCal = a.totalCalories;
+          final bCal = b.totalCalories;
+          // 둘 다 칼로리 있으면 비교
+          if (aCal != null && bCal != null) {
+            final cmp = aCal.compareTo(bCal);
+            if (cmp != 0) return cmp;
+          }
+          // 칼로리 있는 쪽 우선
+          if (aCal != null && bCal == null) return -1;
+          if (aCal == null && bCal != null) return 1;
+          // 둘 다 null이면 가격 오름차순 폴백
+          return _comboPrice(a, deliveryMode)
+              .compareTo(_comboPrice(b, deliveryMode));
         });
     }
     return sorted;
   }
 
   /// 추천 순 점수:
-  /// 예산 활용도(45%) + 세트 보너스(20%) + 시그니쳐(20%) + 구성(15%)
+  /// 식사 완성도(30%) + 세트 보너스(25%) + 예산 활용도(25%) + 시그니쳐(20%)
   double _recommendedScore(
     Recommendation r,
     int budget,
     bool deliveryMode,
   ) {
     if (budget <= 0) return 0;
-    final utilization =
-        (_comboPrice(r, deliveryMode) / budget).clamp(0.0, 1.0);
+    final rawUtil =
+        (_comboPrice(r, deliveryMode) / budget)
+            .clamp(0.0, 1.0);
+    final utilization = (rawUtil / 0.6).clamp(0.0, 1.0);
+
+    final m = r.mainItem;
+    final mealCount = 1 +
+        (r.sideItem != null || m.includesSide ? 1 : 0) +
+        (r.drinkItem != null || m.includesDrink
+            ? 1
+            : 0);
+    final mealCompleteness = mealCount / 3.0;
+
     final setBonus = r.isSet ? 1.0 : 0.0;
     final isSignature =
-        r.mainItem.tags.contains('시그니처') ? 1.0 : 0.0;
-    final completeness = _componentCount(r) / 4.0;
-    return utilization * 0.45 +
-        setBonus * 0.20 +
-        isSignature * 0.20 +
-        completeness * 0.15;
-  }
-
-  int _componentCount(Recommendation r) {
-    final m = r.mainItem;
-    return 1 +
-        (r.sideItem != null || m.includesSide ? 1 : 0) +
-        (r.drinkItem != null || m.includesDrink ? 1 : 0) +
-        (r.dessertItem != null ? 1 : 0);
+        m.tags.contains('시그니처') ? 1.0 : 0.0;
+    return mealCompleteness * 0.30 +
+        setBonus * 0.25 +
+        utilization * 0.25 +
+        isSignature * 0.20;
   }
 }
 

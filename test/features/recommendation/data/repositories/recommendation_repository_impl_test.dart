@@ -72,7 +72,8 @@ void main() {
   ];
 
   group('getRecommendations', () {
-    test('should return recommendations with main + side + drink', () async {
+    test('should return recommendations sorted by price in saving mode',
+        () async {
       when(() => mockDatasource.getCandidates(15000, ['mcd']))
           .thenAnswer((_) async => candidates);
 
@@ -85,10 +86,10 @@ void main() {
       expect(result, isA<Success<List<Recommendation>>>());
       final data = (result as Success<List<Recommendation>>).data;
       expect(data, isNotEmpty);
-      // 절약 정렬: 같은 구성이면 저렴한 조합 우선
+      // 절약 정렬: 가장 저렴한 조합 우선
       expect(data[0].mainItem.name, '맥치킨');
-      expect(data[0].sideItem, isNotNull);
-      expect(data[0].drinkItem, isNotNull);
+      expect(data[0].totalPrice,
+          lessThanOrEqualTo(data[1].totalPrice));
     });
 
     test('should return empty when no mains available', () async {
@@ -141,8 +142,7 @@ void main() {
       expect(data[0].drinkItem, isNull);
     });
 
-    test('should sort by saving (completeness desc, price asc)',
-        () async {
+    test('should sort by saving (price ascending)', () async {
       when(() => mockDatasource.getCandidates(15000, ['mcd']))
           .thenAnswer((_) async => candidates);
 
@@ -154,16 +154,10 @@ void main() {
 
       final data = (result as Success<List<Recommendation>>).data;
       for (var i = 0; i < data.length - 1; i++) {
-        final aComp = _componentCount(data[i]);
-        final bComp = _componentCount(data[i + 1]);
-        if (aComp == bComp) {
-          expect(
-            data[i].totalPrice,
-            lessThanOrEqualTo(data[i + 1].totalPrice),
-          );
-        } else {
-          expect(aComp, greaterThan(bComp));
-        }
+        expect(
+          data[i].totalPrice,
+          lessThanOrEqualTo(data[i + 1].totalPrice),
+        );
       }
     });
 
@@ -984,10 +978,3 @@ void main() {
   });
 }
 
-int _componentCount(Recommendation r) {
-  final m = r.mainItem;
-  return 1 +
-      (r.sideItem != null || m.includesSide ? 1 : 0) +
-      (r.drinkItem != null || m.includesDrink ? 1 : 0) +
-      (r.dessertItem != null ? 1 : 0);
-}
