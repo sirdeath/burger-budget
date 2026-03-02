@@ -49,6 +49,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late final Animation<double> _buttonFade;
   late final Animation<Offset> _buttonSlide;
 
+  final _budgetCardKey = GlobalKey();
+  final _franchiseCardKey = GlobalKey();
+
   static const _totalDuration = Duration(milliseconds: 800);
   static const _slideOffset = Offset(0, 0.08);
 
@@ -92,6 +95,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void dispose() {
     _staggerController.dispose();
     super.dispose();
+  }
+
+  void _showValidationHint({required bool hasBudget}) {
+    final message = !hasBudget
+        ? '예산을 입력해주세요'
+        : '프랜차이즈를 선택해주세요';
+    final targetKey =
+        !hasBudget ? _budgetCardKey : _franchiseCardKey;
+
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+
+    final targetContext = targetKey.currentContext;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -148,6 +172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         child: FadeTransition(
                           opacity: _budgetFade,
                           child: Card(
+                            key: _budgetCardKey,
                             margin: EdgeInsets.zero,
                             child: Padding(
                               padding:
@@ -185,6 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         child: FadeTransition(
                           opacity: _franchiseFade,
                           child: Card(
+                            key: _franchiseCardKey,
                             margin: EdgeInsets.zero,
                             child: Padding(
                               padding:
@@ -222,28 +248,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
                     child: FilledButton.icon(
-                      onPressed: canRecommend
-                          ? () {
-                              HapticFeedback.mediumImpact();
-                              final budget =
-                                  ref.read(budgetStateProvider)!;
-                              final franchises = ref
-                                  .read(selectedFranchisesProvider)
-                                  .toList();
-                              final personCount = ref
-                                  .read(personCountStateProvider);
-                              Navigator.push(
-                                context,
-                                _SlideUpRoute(
-                                  child: ResultsScreen(
-                                    budget: budget,
-                                    franchises: franchises,
-                                    personCount: personCount,
-                                  ),
-                                ),
-                              );
-                            }
-                          : null,
+                      onPressed: () {
+                        if (!canRecommend) {
+                          _showValidationHint(
+                            hasBudget: hasBudget,
+                          );
+                          return;
+                        }
+                        HapticFeedback.mediumImpact();
+                        final budget =
+                            ref.read(budgetStateProvider)!;
+                        final franchises = ref
+                            .read(selectedFranchisesProvider)
+                            .toList();
+                        final personCount =
+                            ref.read(personCountStateProvider);
+                        Navigator.push(
+                          context,
+                          _SlideUpRoute(
+                            child: ResultsScreen(
+                              budget: budget,
+                              franchises: franchises,
+                              personCount: personCount,
+                            ),
+                          ),
+                        );
+                      },
+                      style: canRecommend
+                          ? null
+                          : FilledButton.styleFrom(
+                              backgroundColor: theme
+                                  .colorScheme.onSurface
+                                  .withValues(alpha: 0.12),
+                              foregroundColor: theme
+                                  .colorScheme.onSurface
+                                  .withValues(alpha: 0.38),
+                            ),
                       icon: const Icon(Icons.restaurant_menu),
                       label: const Text('추천받기'),
                     ),

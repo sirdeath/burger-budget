@@ -8,9 +8,9 @@ void main() {
     group('icon', () {
       test('should return correct icon for each MenuType', () {
         expect(MenuTypeDisplay.icon(MenuType.burger), Icons.lunch_dining);
-        expect(MenuTypeDisplay.icon(MenuType.side), Icons.fastfood);
+        expect(MenuTypeDisplay.icon(MenuType.side), Icons.takeout_dining);
         expect(MenuTypeDisplay.icon(MenuType.drink), Icons.local_cafe);
-        expect(MenuTypeDisplay.icon(MenuType.set_), Icons.restaurant_menu);
+        expect(MenuTypeDisplay.icon(MenuType.set_), Icons.fastfood);
         expect(MenuTypeDisplay.icon(MenuType.dessert), Icons.icecream);
       });
 
