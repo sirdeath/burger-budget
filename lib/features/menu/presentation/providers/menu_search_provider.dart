@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/result.dart';
 import '../../domain/entities/menu_item.dart';
@@ -65,4 +66,55 @@ Future<Map<MenuType, List<MenuItem>>> menuCatalog(Ref ref) async {
     }
   }
   return grouped;
+}
+
+// ── 메뉴판 검색/정렬 ──
+
+enum MenuBoardSortMode { priceAsc, priceDesc, nameAsc }
+
+@riverpod
+class MenuBoardQuery extends _$MenuBoardQuery {
+  @override
+  String build() => '';
+
+  void update(String query) {
+    state = query;
+  }
+}
+
+@riverpod
+class MenuBoardSort extends _$MenuBoardSort {
+  @override
+  MenuBoardSortMode build() => MenuBoardSortMode.priceAsc;
+
+  void select(MenuBoardSortMode mode) {
+    state = mode;
+  }
+}
+
+// ── 카테고리별 비교 ──
+
+@riverpod
+class SelectedCompareType extends _$SelectedCompareType {
+  @override
+  MenuType build() => MenuType.set_;
+
+  void select(MenuType type) {
+    state = type;
+  }
+}
+
+@riverpod
+Future<List<MenuItem>> categoryCompare(Ref ref) async {
+  final type = ref.watch(selectedCompareTypeProvider);
+  final repository = ref.watch(menuRepositoryProvider);
+  final result = await repository.getMenusByFranchise(
+    AppConstants.franchiseCodes,
+  );
+  final items = switch (result) {
+    Success(:final data) => data,
+    Failure(:final message) => throw Exception(message),
+  };
+
+  return items.where((i) => i.type == type).toList();
 }

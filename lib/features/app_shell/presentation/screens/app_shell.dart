@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data_update/presentation/screens/settings_screen.dart';
 import '../../../favorite/presentation/screens/favorites_screen.dart';
 import '../../../history/presentation/screens/history_screen.dart';
+import '../../../menu/presentation/screens/menu_board_screen.dart';
 import '../../../recommendation/presentation/screens/home_screen.dart';
 import '../providers/navigation_provider.dart';
 
@@ -20,6 +21,7 @@ class AppShell extends ConsumerWidget {
         index: currentIndex,
         children: const [
           HomeScreen(),
+          MenuBoardScreen(),
           FavoritesScreen(),
           HistoryScreen(),
           SettingsScreen(),
@@ -36,6 +38,11 @@ class AppShell extends ConsumerWidget {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: '홈',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: '메뉴판',
           ),
           NavigationDestination(
             icon: Icon(Icons.favorite_border),
