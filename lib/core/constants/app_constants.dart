@@ -6,6 +6,7 @@ class AppConstants {
   // DB
   static const String seedDbAssetPath = 'assets/menu_seed.db';
   static const String dbFileName = 'menu.db';
+  static const int seedDbVersion = 2;
   static const String tempDbFileName = 'menu_new.db';
   static const String dbVersionKey = 'db_version';
 

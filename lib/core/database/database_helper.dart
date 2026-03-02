@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/app_constants.dart';
@@ -10,6 +11,8 @@ import '../constants/app_constants.dart';
 class DatabaseHelper {
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
+
+  static const _seedVersionKey = 'seed_db_version';
 
   Database? _database;
 
@@ -27,9 +30,17 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     final path = await _dbPath;
     final exists = await File(path).exists();
+    final prefs = await SharedPreferences.getInstance();
+    final storedVersion = prefs.getInt(_seedVersionKey) ?? 0;
+    final needsRefresh =
+        !exists || storedVersion < AppConstants.seedDbVersion;
 
-    if (!exists) {
+    if (needsRefresh) {
       await _copySeedDatabase(path);
+      await prefs.setInt(
+        _seedVersionKey,
+        AppConstants.seedDbVersion,
+      );
     }
 
     return openDatabase(path, readOnly: false);
