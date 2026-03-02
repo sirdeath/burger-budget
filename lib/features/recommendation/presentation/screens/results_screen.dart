@@ -11,6 +11,7 @@ import '../../../../shared/widgets/skeleton_card.dart';
 import '../../domain/entities/recommendation.dart';
 import '../../../menu/presentation/screens/menu_detail_screen.dart';
 import '../providers/recommendation_provider.dart';
+import '../widgets/delivery_cost_sheet.dart';
 import '../widgets/recommendation_card.dart';
 
 class ResultsScreen extends ConsumerWidget {
@@ -309,6 +310,21 @@ class ResultsScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
+                    if (isDelivery && recommendations.isNotEmpty)
+                      _DeliveryDiffSummary(
+                        recommendations: recommendations,
+                        onCalculatorTap: () {
+                          showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => DeliveryCostSheet(
+                              recommendation:
+                                  recommendations.first,
+                              personCount: personCount,
+                            ),
+                          );
+                        },
+                      ),
                     if (recommendations.isEmpty)
                       Expanded(
                         child: EmptyState(
@@ -503,6 +519,79 @@ class _StaggeredCardListState extends State<_StaggeredCardList>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _DeliveryDiffSummary extends StatelessWidget {
+  const _DeliveryDiffSummary({
+    required this.recommendations,
+    required this.onCalculatorTap,
+  });
+
+  final List<Recommendation> recommendations;
+  final VoidCallback onCalculatorTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final diffs = recommendations
+        .map((r) => r.totalPriceDiff)
+        .whereType<int>()
+        .where((d) => d > 0)
+        .toList();
+    if (diffs.isEmpty) return const SizedBox.shrink();
+
+    final avgDiff = diffs.reduce((a, b) => a + b) ~/ diffs.length;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 16,
+              color: theme.colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                '무료배달이라도 메뉴 가격 차이로'
+                ' 평균 +${formatKRW(avgDiff)} 더 냅니다',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: onCalculatorTap,
+              icon: Icon(
+                Icons.calculate_outlined,
+                size: 20,
+                color: theme.colorScheme.onErrorContainer,
+              ),
+              tooltip: '배달비 계산기',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

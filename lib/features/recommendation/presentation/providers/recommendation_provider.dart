@@ -102,6 +102,16 @@ class DisplayedCountState extends _$DisplayedCountState {
 }
 
 @riverpod
+class DeliveryFeeState extends _$DeliveryFeeState {
+  @override
+  int build() => 0;
+
+  void setFee(int fee) {
+    state = fee.clamp(0, 99000);
+  }
+}
+
+@riverpod
 Future<List<Recommendation>> recommendations(
   Ref ref, {
   required int budget,

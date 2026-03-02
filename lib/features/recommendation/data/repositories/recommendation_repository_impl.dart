@@ -16,8 +16,8 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   /// 같은 메인 아이템이 최종 결과에 최대 몇 개 포함될 수 있는지
   static const _maxPerMain = 2;
 
-  /// 최종 결과 상한
-  static const _maxResults = 50;
+  /// 최종 결과 상한 (세트/단품 필터링 시에도 충분한 결과 보장)
+  static const _maxResults = 150;
 
   @override
   Future<Result<List<Recommendation>>> getRecommendations({
