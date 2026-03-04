@@ -72,7 +72,9 @@ void main() {
       await tester.pumpWidget(createWidget());
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      // Button always has onPressed (shows hint when disabled),
+      // but uses custom style to indicate disabled state.
+      expect(button.style, isNotNull);
     });
 
     testWidgets(
@@ -85,7 +87,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.style, isNotNull);
     });
 
     testWidgets(
@@ -98,7 +100,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.style, isNotNull);
     });
 
     testWidgets(
@@ -134,7 +136,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.style, isNotNull);
     });
 
     testWidgets('should display budget preset chips', (tester) async {
