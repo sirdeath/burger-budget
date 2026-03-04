@@ -46,6 +46,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release signing
+android/key.properties
+*.jks
+*.keystore
+
 # iOS (차후 지원 시)
 /ios/Pods/
 /ios/.symlinks/
@@ -53,4 +58,8 @@ app.*.map.json
 # Claude Code / OMC (로컬 개발 도구)
 .claude/
 .omc/
+.mcp.json
 CLAUDE.md
+
+# Codex
+AGENTS.md
