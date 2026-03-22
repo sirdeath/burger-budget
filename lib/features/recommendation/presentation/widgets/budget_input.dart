@@ -127,7 +127,7 @@ class _BudgetInputState extends ConsumerState<BudgetInputWidget> {
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(5),
+                  LengthLimitingTextInputFormatter(6),
                 ],
                 decoration: InputDecoration(
                   labelText: '예산',

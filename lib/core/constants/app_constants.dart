@@ -111,7 +111,7 @@ class AppConstants {
 
   // Budget limits
   static const int minBudget = 1000;
-  static const int maxBudget = 50000;
+  static const int maxBudget = 100000;
   static const List<int> budgetPresets = [
     5000,
     10000,
