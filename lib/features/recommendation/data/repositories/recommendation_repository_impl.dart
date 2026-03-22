@@ -1,3 +1,8 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
+
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/result.dart';
 import '../../../menu/domain/entities/menu_item.dart';
 import '../../domain/entities/recommendation.dart';
@@ -9,15 +14,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
   final RecommendationDatasource _datasource;
 
-  /// 메인당 생성할 최대 사이드/음료 조합 후보 수
-  static const _maxSideOptions = 3;
-  static const _maxDrinkOptions = 3;
-
   /// 같은 메인 아이템이 최종 결과에 최대 몇 개 포함될 수 있는지
   static const _maxPerMain = 2;
 
-  /// 최종 결과 상한 (세트/단품 필터링 시에도 충분한 결과 보장)
+  /// 최종 결과 상한
   static const _maxResults = 150;
+
+  /// 디저트 부착 시 최소 스코어 상승폭
+  static const _dessertThreshold = 0.05;
 
   @override
   Future<Result<List<Recommendation>>> getRecommendations({
@@ -28,20 +32,20 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     bool deliveryMode = false,
   }) async {
     try {
-      final perPersonBudget =
+      final perPerson =
           personCount > 1 ? budget ~/ personCount : budget;
       final candidates = await _datasource.getCandidates(
-        perPersonBudget,
+        perPerson,
         franchises,
         deliveryMode: deliveryMode,
       );
       final combos =
-          _buildAllCombos(candidates, perPersonBudget, deliveryMode);
+          _buildAllCombos(candidates, perPerson, deliveryMode);
       final diverse = _selectDiverse(combos);
       final sorted = _applySortMode(
         diverse,
         sort,
-        perPersonBudget,
+        perPerson,
         deliveryMode,
       );
       return Success(sorted);
@@ -52,16 +56,36 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
   /// 배달 모드면 deliveryPrice, 없으면 매장가 폴백
   static int _itemPrice(MenuItem item, bool deliveryMode) =>
-      deliveryMode ? (item.deliveryPrice ?? item.price) : item.price;
+      deliveryMode
+          ? (item.deliveryPrice ?? item.price)
+          : item.price;
 
-  // ── 1단계: 모든 가능한 조합 생성 + 점수 산정 ──
+  /// 조합의 실효 가격
+  static int _comboPrice(
+    Recommendation combo,
+    bool deliveryMode,
+  ) =>
+      deliveryMode
+          ? (combo.totalDeliveryPrice ?? combo.totalPrice)
+          : combo.totalPrice;
+
+  // ── utilization: 예산 구간별 타겟 ──
+
+  static double _targetUtilization(int budgetPerPerson) {
+    if (budgetPerPerson < 8000) return 0.75;
+    if (budgetPerPerson < 13000) return 0.82;
+    return 0.87;
+  }
+
+  // ══════════════════════════════════════════════
+  // 1단계: 조합 생성 (사이드/음료 전체 확장 + 디저트 후처리)
+  // ══════════════════════════════════════════════
 
   List<_ScoredCombo> _buildAllCombos(
     List<MenuItem> candidates,
     int budget,
     bool deliveryMode,
   ) {
-    // 프랜차이즈별 그룹핑 → 같은 가게 메뉴끼리만 조합
     final byFranchise = <String, List<MenuItem>>{};
     for (final item in candidates) {
       byFranchise
@@ -89,7 +113,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           .toList();
 
       for (final setItem in sets) {
-        if (_itemPrice(setItem, deliveryMode) > budget) continue;
+        if (_itemPrice(setItem, deliveryMode) > budget) {
+          continue;
+        }
         _generateCombos(
           scored,
           setItem,
@@ -104,7 +130,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       }
 
       for (final burger in burgers) {
-        if (_itemPrice(burger, deliveryMode) > budget) continue;
+        if (_itemPrice(burger, deliveryMode) > budget) {
+          continue;
+        }
         _generateCombos(
           scored,
           burger,
@@ -134,117 +162,211 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     final remaining =
         budget - _itemPrice(mainItem, deliveryMode);
 
-    // 사이드 후보: null(미선택) + 가격 내 상위 N개
+    // 사이드: 예산 내 전체 (상위 N개 제한 제거)
     final sideOptions = skipSide
         ? <MenuItem?>[null]
         : <MenuItem?>[
             null,
-            ...sides
-                .where(
-                  (s) => _itemPrice(s, deliveryMode) <= remaining,
-                )
-                .take(_maxSideOptions),
+            ...sides.where(
+              (s) =>
+                  _itemPrice(s, deliveryMode) <= remaining,
+            ),
           ];
 
     for (final side in sideOptions) {
-      final afterSide =
-          remaining - (side != null ? _itemPrice(side, deliveryMode) : 0);
+      final afterSide = remaining -
+          (side != null
+              ? _itemPrice(side, deliveryMode)
+              : 0);
 
-      // 음료 후보: null(미선택) + 남은 예산 내 상위 N개
+      // 음료: 예산 내 전체 (상위 N개 제한 제거)
       final drinkOptions = skipDrink
           ? <MenuItem?>[null]
           : <MenuItem?>[
               null,
-              ...drinks
-                  .where(
-                    (d) =>
-                        _itemPrice(d, deliveryMode) <= afterSide,
-                  )
-                  .take(_maxDrinkOptions),
+              ...drinks.where(
+                (d) =>
+                    _itemPrice(d, deliveryMode) <=
+                    afterSide,
+              ),
             ];
 
       for (final drink in drinkOptions) {
         final afterDrink = afterSide -
-            (drink != null ? _itemPrice(drink, deliveryMode) : 0);
+            (drink != null
+                ? _itemPrice(drink, deliveryMode)
+                : 0);
 
-        // 디저트: 남은 예산 내 가장 비싼 하나
-        MenuItem? dessert;
-        for (final d in desserts) {
-          if (_itemPrice(d, deliveryMode) <= afterDrink) {
-            dessert = d;
-            break;
-          }
-        }
-
-        // 메인만 있는 조합은 사이드/음료가 있을 때보다 우선도 낮음
-        // → null+null 조합도 생성하되 점수로 후순위 처리
-        final combo = Recommendation(
+        // ── 디저트 후처리 부착 ──
+        // 먼저 디저트 없이 스코어 계산
+        final comboBase = Recommendation(
           mainItem: mainItem,
           sideItem: side,
           drinkItem: drink,
-          dessertItem: dessert,
+        );
+        final scoreBase = _unifiedScore(
+          comboBase,
+          budget,
+          deliveryMode,
         );
 
-        final score =
-            _scoreCombo(combo, budget, deliveryMode);
-        results.add(_ScoredCombo(combo, score));
+        // 예산 내 디저트 중 스코어 상승폭이 임계값 이상인
+        // 최고 디저트만 부착
+        MenuItem? bestDessert;
+        double bestScore = scoreBase;
+
+        for (final d in desserts) {
+          if (_itemPrice(d, deliveryMode) > afterDrink) {
+            continue;
+          }
+          final withDessert = Recommendation(
+            mainItem: mainItem,
+            sideItem: side,
+            drinkItem: drink,
+            dessertItem: d,
+          );
+          final s = _unifiedScore(
+            withDessert,
+            budget,
+            deliveryMode,
+          );
+          if (s - scoreBase > _dessertThreshold &&
+              s > bestScore) {
+            bestDessert = d;
+            bestScore = s;
+          }
+        }
+
+        final finalCombo = bestDessert != null
+            ? Recommendation(
+                mainItem: mainItem,
+                sideItem: side,
+                drinkItem: drink,
+                dessertItem: bestDessert,
+              )
+            : comboBase;
+
+        results.add(_ScoredCombo(finalCombo, bestScore));
       }
     }
   }
 
-  // ── 2단계: 점수 산정 ──
+  // ══════════════════════════════════════════════
+  // 2단계: 통합 스코어링 (단일 함수)
+  // ══════════════════════════════════════════════
   //
-  // 식사 완성도 (55%): 메인+사이드+음료 = 한 끼 (세트 포함분 인정)
-  // 예산 활용도 (35%): 예산의 60% 이상 쓰면 만점 (과도한 채우기 방지)
-  // 디저트 보너스 (10%): 있으면 가산
+  // 가중치 (preferenceFit 미구현 → 비례 재분배):
+  //   mealCompleteness: 0.30
+  //   utilization:      0.25
+  //   setBonus:         0.15
+  //   signatureBonus:   0.15
+  //   dessertBonus:     0.15
+  //
+  // preferenceFit 구현 시:
+  //   meal 0.25, util 0.20, set 0.10, sig 0.10,
+  //   pref 0.25, dessert 0.10
 
-  /// 조합의 실효 가격 (배달 모드면 배달가, 아니면 매장가)
-  static int _comboPrice(
-    Recommendation combo,
-    bool deliveryMode,
-  ) =>
-      deliveryMode
-          ? (combo.totalDeliveryPrice ?? combo.totalPrice)
-          : combo.totalPrice;
-
-  double _scoreCombo(
+  double _unifiedScore(
     Recommendation combo,
     int budget,
     bool deliveryMode,
   ) {
     if (budget <= 0) return 0;
 
-    final rawUtil =
+    // 1. Utilization: 예산 구간별 타겟 + 민감도 완화
+    final util =
         (_comboPrice(combo, deliveryMode) / budget)
             .clamp(0.0, 1.0);
-    // 예산의 60% 이상 쓰면 만점 — 예산 채우기 경쟁 방지
-    final utilization = (rawUtil / 0.6).clamp(0.0, 1.0);
+    final target = _targetUtilization(budget);
+    final rawUtil =
+        max(0.0, 1.0 - (util - target).abs() / 0.20);
+    final utilization = pow(rawUtil, 0.7).toDouble();
 
-    final main = combo.mainItem;
-    // 식사 완성도: 메인+사이드+음료 = 한 끼 (3/3 만점)
-    // 디저트는 보너스로만 취급
-    final mealCount = 1 +
-        (combo.sideItem != null || main.includesSide
-            ? 1
-            : 0) +
-        (combo.drinkItem != null || main.includesDrink
-            ? 1
-            : 0);
-    final mealCompleteness = mealCount / 3.0;
+    // 2. Meal completeness: 카테고리별 가중 완성도
+    final m = combo.mainItem;
+    final hasSide =
+        (combo.sideItem != null || m.includesSide)
+            ? 1.0
+            : 0.0;
+    final hasDrink =
+        (combo.drinkItem != null || m.includesDrink)
+            ? 1.0
+            : 0.0;
+    // 메인 0.55 + 사이드 0.25 + 음료 0.20
+    final mealCompleteness =
+        0.55 + hasSide * 0.25 + hasDrink * 0.20;
+
+    // 3. Set bonus: bundle completeness 휴리스틱
+    double setBonus = 0;
+    if (m.type == MenuType.set_) {
+      if (m.includesSide && m.includesDrink) {
+        setBonus = 1.0;
+      } else if (m.includesSide || m.includesDrink) {
+        setBonus = 0.5;
+      }
+    }
+
+    // 4. Signature bonus
+    final signatureBonus =
+        AppConstants.isSignatureMenu(m.franchise, m.name)
+            ? 1.0
+            : 0.0;
+
+    // 5. Dessert bonus
     final dessertBonus =
         combo.dessertItem != null ? 1.0 : 0.0;
 
-    return utilization * 0.35 +
-        mealCompleteness * 0.55 +
-        dessertBonus * 0.10;
+    final score = mealCompleteness * 0.30 +
+        utilization * 0.25 +
+        setBonus * 0.15 +
+        signatureBonus * 0.15 +
+        dessertBonus * 0.15;
+
+    // 디버그 로그 (debug 모드에서만)
+    if (kDebugMode && _shouldLog) {
+      _logCombo(combo, deliveryMode, score, {
+        'util': util,
+        'utilScore': utilization,
+        'target': target,
+        'meal': mealCompleteness,
+        'set': setBonus,
+        'sig': signatureBonus,
+        'dessert': dessertBonus,
+      });
+    }
+
+    return score;
   }
 
-  // ── 3단계: 다양성 보장 선택 (프랜차이즈 라운드로빈) ──
-  //
-  // - 프랜차이즈별 그룹 → 점수순 정렬
-  // - 라운드로빈으로 각 프랜차이즈에서 1개씩 번갈아 선택
-  // - 동일 메인 아이템 최대 _maxPerMain개
-  // - 동일 조합 중복 제거
+  // 로그 플래그 (전수 열거 시 너무 많으므로 상위만)
+  static final bool _shouldLog = false;
+
+  static void _logCombo(
+    Recommendation combo,
+    bool deliveryMode,
+    double score,
+    Map<String, double> features,
+  ) {
+    final price = _comboPrice(combo, deliveryMode);
+    final parts = <String>[combo.mainItem.name];
+    if (combo.sideItem != null) parts.add(combo.sideItem!.name);
+    if (combo.drinkItem != null) {
+      parts.add(combo.drinkItem!.name);
+    }
+    if (combo.dessertItem != null) {
+      parts.add(combo.dessertItem!.name);
+    }
+    final franchise = combo.mainItem.franchise;
+    debugPrint(
+      '[COMBO] $franchise: ${parts.join(" + ")} '
+      '| $price원 | score: ${score.toStringAsFixed(3)} '
+      '| ${features.entries.map((e) => "${e.key}:${e.value.toStringAsFixed(2)}").join(" ")}',
+    );
+  }
+
+  // ══════════════════════════════════════════════
+  // 3단계: 다양성 보장 (라운드로빈)
+  // ══════════════════════════════════════════════
 
   List<Recommendation> _selectDiverse(
     List<_ScoredCombo> scored,
@@ -253,14 +375,16 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
     scored.sort((a, b) => b.score.compareTo(a.score));
 
-    // 프랜차이즈별 큐 (중복 조합 제거)
     final seen = <String>{};
     final queues = <String, List<_ScoredCombo>>{};
     for (final entry in scored) {
       final key = _comboKey(entry.combo);
       if (!seen.add(key)) continue;
       queues
-          .putIfAbsent(entry.combo.mainItem.franchise, () => [])
+          .putIfAbsent(
+            entry.combo.mainItem.franchise,
+            () => [],
+          )
           .add(entry);
     }
 
@@ -270,7 +394,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       for (final k in queues.keys) k: 0,
     };
 
-    // 라운드로빈: 각 프랜차이즈에서 순서대로 1개씩
     while (result.length < _maxResults) {
       var added = false;
       for (final franchise in queues.keys) {
@@ -296,6 +419,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       if (!added) break;
     }
 
+    // 상위 결과 로그 (debug 모드)
+    if (kDebugMode && result.isNotEmpty) {
+      debugPrint(
+        '[RECOMMEND] ${result.length} combos selected '
+        '(from ${scored.length} total)',
+      );
+    }
+
     return result;
   }
 
@@ -305,7 +436,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       ':${combo.drinkItem?.id ?? ''}'
       ':${combo.dessertItem?.id ?? ''}';
 
-  // ── 4단계: 사용자 선택 정렬 모드 적용 ──
+  // ══════════════════════════════════════════════
+  // 4단계: 정렬 모드 적용 (통합 스코어 사용)
+  // ══════════════════════════════════════════════
 
   List<Recommendation> _applySortMode(
     List<Recommendation> recommendations,
@@ -313,18 +446,31 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     int budget,
     bool deliveryMode,
   ) {
-    final sorted = List<Recommendation>.from(recommendations);
+    final sorted =
+        List<Recommendation>.from(recommendations);
     switch (sort) {
       case SortMode.recommended:
+        // 통합 스코어로 정렬 (다양성 단계와 동일 기준)
         sorted.sort((a, b) {
           final aScore =
-              _recommendedScore(a, budget, deliveryMode);
+              _unifiedScore(a, budget, deliveryMode);
           final bScore =
-              _recommendedScore(b, budget, deliveryMode);
-          return bScore.compareTo(aScore);
+              _unifiedScore(b, budget, deliveryMode);
+          final cmp = bScore.compareTo(aScore);
+          if (cmp != 0) return cmp;
+          // 동점 tie-breaker: 예산 타겟에 더 가까운 것
+          final target = _targetUtilization(budget);
+          final aUtil =
+              (_comboPrice(a, deliveryMode) / budget)
+                  .abs();
+          final bUtil =
+              (_comboPrice(b, deliveryMode) / budget)
+                  .abs();
+          return (aUtil - target)
+              .abs()
+              .compareTo((bUtil - target).abs());
         });
       case SortMode.saving:
-        // 절약순: 가격 오름차순 (적게 쓸수록 상위)
         sorted.sort((a, b) {
           return _comboPrice(a, deliveryMode)
               .compareTo(_comboPrice(b, deliveryMode));
@@ -333,50 +479,17 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         sorted.sort((a, b) {
           final aCal = a.totalCalories;
           final bCal = b.totalCalories;
-          // 둘 다 칼로리 있으면 비교
           if (aCal != null && bCal != null) {
             final cmp = aCal.compareTo(bCal);
             if (cmp != 0) return cmp;
           }
-          // 칼로리 있는 쪽 우선
           if (aCal != null && bCal == null) return -1;
           if (aCal == null && bCal != null) return 1;
-          // 둘 다 null이면 가격 오름차순 폴백
           return _comboPrice(a, deliveryMode)
               .compareTo(_comboPrice(b, deliveryMode));
         });
     }
     return sorted;
-  }
-
-  /// 추천 순 점수:
-  /// 식사 완성도(30%) + 세트 보너스(25%) + 예산 활용도(25%) + 시그니쳐(20%)
-  double _recommendedScore(
-    Recommendation r,
-    int budget,
-    bool deliveryMode,
-  ) {
-    if (budget <= 0) return 0;
-    final rawUtil =
-        (_comboPrice(r, deliveryMode) / budget)
-            .clamp(0.0, 1.0);
-    final utilization = (rawUtil / 0.6).clamp(0.0, 1.0);
-
-    final m = r.mainItem;
-    final mealCount = 1 +
-        (r.sideItem != null || m.includesSide ? 1 : 0) +
-        (r.drinkItem != null || m.includesDrink
-            ? 1
-            : 0);
-    final mealCompleteness = mealCount / 3.0;
-
-    final setBonus = r.isSet ? 1.0 : 0.0;
-    final isSignature =
-        m.tags.contains('시그니처') ? 1.0 : 0.0;
-    return mealCompleteness * 0.30 +
-        setBonus * 0.25 +
-        utilization * 0.25 +
-        isSignature * 0.20;
   }
 }
 
