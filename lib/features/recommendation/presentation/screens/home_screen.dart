@@ -447,7 +447,22 @@ class _LastOrderCard extends ConsumerWidget {
           items.add(order.drinkItem!.name);
         }
 
-        return Card(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.xs,
+                bottom: AppSpacing.xs,
+              ),
+              child: Text(
+                '최근 선택',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ),
+            Card(
           margin: EdgeInsets.zero,
           child: InkWell(
             onTap: () => showModalBottomSheet<void>(
@@ -525,6 +540,8 @@ class _LastOrderCard extends ConsumerWidget {
               ),
             ),
           ),
+        ),
+          ],
         );
       },
       loading: () => const SizedBox.shrink(),
