@@ -284,15 +284,13 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   //   meal 0.25, util 0.20, set 0.10, sig 0.10,
   //   pref 0.25, dessert 0.10
 
-  double _unifiedScore(
+  /// feature vector 계산 (단일 함수로 통합)
+  Map<String, double> _computeFeatures(
     Recommendation combo,
     int budget,
     bool deliveryMode,
     UserPreference pref,
   ) {
-    if (budget <= 0) return 0;
-
-    // 1. Utilization: 예산 구간별 타겟 + 민감도 완화
     final util =
         (_comboPrice(combo, deliveryMode) / budget)
             .clamp(0.0, 1.0);
@@ -301,7 +299,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         max(0.0, 1.0 - (util - target).abs() / 0.20);
     final utilization = pow(rawUtil, 0.7).toDouble();
 
-    // 2. Meal completeness: 카테고리별 가중 완성도
     final m = combo.mainItem;
     final hasSide =
         (combo.sideItem != null || m.includesSide)
@@ -314,7 +311,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     final mealCompleteness =
         0.55 + hasSide * 0.25 + hasDrink * 0.20;
 
-    // 3. Set bonus: bundle completeness 휴리스틱
     double setBonus = 0;
     if (m.type == MenuType.set_) {
       if (m.includesSide && m.includesDrink) {
@@ -324,39 +320,43 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       }
     }
 
-    // 4. Signature bonus
-    final signatureBonus =
-        AppConstants.isSignatureMenu(m.franchise, m.name)
-            ? 1.0
-            : 0.0;
+    return {
+      'util': utilization,
+      'utilPct': util,
+      'meal': mealCompleteness,
+      'set': setBonus,
+      'sig': AppConstants.isSignatureMenu(
+              m.franchise, m.name)
+          ? 1.0
+          : 0.0,
+      'pref': _calcPreferenceFit(combo, pref),
+      'dessert': combo.dessertItem != null ? 1.0 : 0.0,
+    };
+  }
 
-    // 5. Dessert bonus
-    final dessertBonus =
-        combo.dessertItem != null ? 1.0 : 0.0;
+  static double _scoreFromFeatures(
+    Map<String, double> f,
+  ) =>
+      f['meal']! * 0.25 +
+      f['util']! * 0.20 +
+      f['set']! * 0.10 +
+      f['sig']! * 0.10 +
+      f['pref']! * 0.25 +
+      f['dessert']! * 0.10;
 
-    // 6. Preference fit (시간 가중 + 빈도)
-    final prefFit = _calcPreferenceFit(combo, pref);
+  double _unifiedScore(
+    Recommendation combo,
+    int budget,
+    bool deliveryMode,
+    UserPreference pref,
+  ) {
+    if (budget <= 0) return 0;
+    final features =
+        _computeFeatures(combo, budget, deliveryMode, pref);
+    final score = _scoreFromFeatures(features);
 
-    // 최종 가중치 (설계서 최종 버전)
-    final score = mealCompleteness * 0.25 +
-        utilization * 0.20 +
-        setBonus * 0.10 +
-        signatureBonus * 0.10 +
-        prefFit * 0.25 +
-        dessertBonus * 0.10;
-
-    // 디버그 로그 (debug 모드에서만)
     if (kDebugMode && _shouldLog) {
-      _logCombo(combo, deliveryMode, score, {
-        'util': util,
-        'utilScore': utilization,
-        'target': target,
-        'meal': mealCompleteness,
-        'set': setBonus,
-        'sig': signatureBonus,
-        'pref': prefFit,
-        'dessert': dessertBonus,
-      });
+      _logCombo(combo, deliveryMode, score, features);
     }
 
     return score;
@@ -369,50 +369,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     bool deliveryMode,
     UserPreference pref,
   ) {
-    final m = combo.mainItem;
-    final util =
-        (_comboPrice(combo, deliveryMode) / budget)
-            .clamp(0.0, 1.0);
-    final target = _targetUtilization(budget);
-    final rawUtil =
-        max(0.0, 1.0 - (util - target).abs() / 0.20);
-    final utilization = pow(rawUtil, 0.7).toDouble();
-    final hasSide =
-        (combo.sideItem != null || m.includesSide)
-            ? 1.0
-            : 0.0;
-    final hasDrink =
-        (combo.drinkItem != null || m.includesDrink)
-            ? 1.0
-            : 0.0;
-    final mealCompleteness =
-        0.55 + hasSide * 0.25 + hasDrink * 0.20;
-
-    double setBonus = 0;
-    if (m.type == MenuType.set_) {
-      if (m.includesSide && m.includesDrink) {
-        setBonus = 1.0;
-      } else if (m.includesSide || m.includesDrink) {
-        setBonus = 0.5;
-      }
-    }
-
+    final features =
+        _computeFeatures(combo, budget, deliveryMode, pref);
     return Recommendation(
       mainItem: combo.mainItem,
       sideItem: combo.sideItem,
       drinkItem: combo.drinkItem,
       dessertItem: combo.dessertItem,
-      scoreBreakdown: {
-        'util': utilization,
-        'utilPct': util,
-        'meal': mealCompleteness,
-        'set': setBonus,
-        'sig': AppConstants.isSignatureMenu(
-                m.franchise, m.name)
-            ? 1.0
-            : 0.0,
-        'pref': _calcPreferenceFit(combo, pref),
-      },
+      scoreBreakdown: features,
     );
   }
 
@@ -469,33 +433,30 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     List<Recommendation> sorted,
     UserPreference pref,
   ) {
-    // preferenceFit이 낮지만 전체 스코어는 괜찮은 후보 찾기
-    final exploreCandidates = <int>[];
+    // preferenceFit이 낮지만 전체 스코어는 괜찮은 후보 수집
+    // (인덱스가 아닌 객체 참조로 안전하게 처리)
+    final exploreCandidates = <Recommendation>[];
     for (var i = 2; i < sorted.length; i++) {
       final p = sorted[i].scoreBreakdown['pref'] ?? 0;
       final meal = sorted[i].scoreBreakdown['meal'] ?? 0;
       if (p < 0.15 && meal >= 0.55) {
-        exploreCandidates.add(i);
+        exploreCandidates.add(sorted[i]);
       }
     }
 
     if (exploreCandidates.isEmpty) return;
 
-    // 위치 2(3번째)에 첫 번째 exploration 삽입
-    const insertPositions = [2, 5]; // 0-indexed: 3번째, 6번째
+    // 위치 2(3번째), 5(6번째)에 exploration 삽입
+    const insertPositions = [2, 5];
     var inserted = 0;
     for (final pos in insertPositions) {
       if (inserted >= exploreCandidates.length) break;
-      final adjustedPos = pos + inserted;
-      if (adjustedPos >= sorted.length) break;
+      final candidate = exploreCandidates[inserted];
+      final currentIdx = sorted.indexOf(candidate);
+      if (currentIdx == -1 || currentIdx <= pos) continue;
 
-      final candidateIdx =
-          exploreCandidates[inserted] + inserted;
-      if (candidateIdx >= sorted.length) break;
-      if (candidateIdx <= adjustedPos) continue;
-
-      final item = sorted.removeAt(candidateIdx);
-      sorted.insert(adjustedPos, item);
+      sorted.removeAt(currentIdx);
+      sorted.insert(pos, candidate);
       inserted++;
     }
   }
