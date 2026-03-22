@@ -57,6 +57,7 @@ class ResultsScreen extends ConsumerWidget {
                 final text = formatResultsForShare(
                   budget: budget,
                   recommendations: asyncRecommendations.asData!.value,
+                  personCount: personCount,
                 );
                 Share.share(text);
               },

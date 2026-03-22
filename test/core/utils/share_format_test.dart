@@ -50,22 +50,29 @@ void main() {
         drinkItem: coke,
       );
 
-      expect(result, contains("McDonald's 추천 조합"));
-      expect(result, contains('🍔 메인: 빅맥 - 5,500원'));
-      expect(result, contains('🍟 사이드: 감자튀김 (M) - 2,000원'));
-      expect(result, contains('🥤 음료: 코카콜라 (M) - 1,500원'));
-      expect(result, contains('💰 총 가격: 9,000원'));
-      expect(result, contains('🔥 총 칼로리: 1030 kcal'));
-      expect(result, contains('#버짓'));
+      expect(result, contains("McDonald's"));
+      expect(result, contains('빅맥 + 감자튀김 (M) + 코카콜라 (M)'));
+      expect(result, contains('9,000원'));
+      expect(result, contains('1030 kcal'));
+      expect(result, contains('#버짓 으로 추천받았어요'));
+    });
+
+    test('예산 전달 시 잔액을 표시한다', () {
+      final result = formatComboForShare(
+        mainItem: bigMac,
+        budget: 10000,
+      );
+
+      expect(result, contains('4,500원 남음'));
     });
 
     test('메인만 있는 경우 사이드/음료를 생략한다', () {
       final result = formatComboForShare(mainItem: bigMac);
 
-      expect(result, contains('🍔 메인: 빅맥'));
-      expect(result, isNot(contains('🍟 사이드')));
-      expect(result, isNot(contains('🥤 음료')));
-      expect(result, contains('💰 총 가격: 5,500원'));
+      expect(result, contains('빅맥'));
+      expect(result, isNot(contains('감자튀김')));
+      expect(result, isNot(contains('코카콜라')));
+      expect(result, contains('5,500원'));
     });
 
     test('칼로리가 null이면 칼로리 줄을 생략한다', () {
@@ -79,12 +86,12 @@ void main() {
 
       final result = formatComboForShare(mainItem: noCal);
 
-      expect(result, isNot(contains('칼로리')));
+      expect(result, isNot(contains('kcal')));
     });
   });
 
   group('formatResultsForShare', () {
-    test('전체 추천 결과를 포맷한다', () {
+    test('추천 결과를 포맷한다', () {
       final recommendations = [
         const Recommendation(
           mainItem: bigMac,
@@ -101,17 +108,46 @@ void main() {
 
       expect(result, contains('🍔 버짓 추천 결과'));
       expect(result, contains('💰 예산: 10,000원'));
-      expect(
-        result,
-        contains(
-          "1. [McDonald's] 빅맥 + 감자튀김 (M) + 코카콜라 (M) (9,000원)",
+      expect(result, contains("1. [McDonald's] 빅맥 + 감자튀김 (M) + 코카콜라 (M)"));
+      expect(result, contains('1,000원 절약'));
+      expect(result, contains('2. [Burger King] 와퍼'));
+      expect(result, contains('3,500원 절약'));
+      expect(result, contains('#버짓 으로 추천받았어요'));
+    });
+
+    test('다인원 시 1인당 예산을 표시한다', () {
+      final result = formatResultsForShare(
+        budget: 20000,
+        recommendations: [],
+        personCount: 2,
+      );
+
+      expect(result, contains('2인'));
+      expect(result, contains('1인당 10,000원'));
+    });
+
+    test('5개 초과 시 상위 5개만 공유한다', () {
+      final recommendations = List.generate(
+        8,
+        (i) => Recommendation(
+          mainItem: MenuItem(
+            id: 'item_$i',
+            franchise: 'mcd',
+            name: '메뉴$i',
+            type: MenuType.burger,
+            price: 5000 + i * 100,
+          ),
         ),
       );
-      expect(
-        result,
-        contains('2. [Burger King] 와퍼 (6,500원)'),
+
+      final result = formatResultsForShare(
+        budget: 10000,
+        recommendations: recommendations,
       );
-      expect(result, contains('#버짓'));
+
+      expect(result, contains('5.'));
+      expect(result, isNot(contains('6.')));
+      expect(result, contains('외 3개 더 보기'));
     });
 
     test('빈 추천 결과도 헤더를 포함한다', () {
