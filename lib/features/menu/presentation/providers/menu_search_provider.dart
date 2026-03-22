@@ -70,7 +70,7 @@ Future<Map<MenuType, List<MenuItem>>> menuCatalog(Ref ref) async {
 
 // ── 메뉴판 검색/정렬 ──
 
-enum MenuBoardSortMode { priceAsc, priceDesc, nameAsc }
+enum MenuBoardSortMode { popular, priceAsc, priceDesc, nameAsc }
 
 @riverpod
 class MenuBoardQuery extends _$MenuBoardQuery {
@@ -85,7 +85,7 @@ class MenuBoardQuery extends _$MenuBoardQuery {
 @riverpod
 class MenuBoardSort extends _$MenuBoardSort {
   @override
-  MenuBoardSortMode build() => MenuBoardSortMode.priceAsc;
+  MenuBoardSortMode build() => MenuBoardSortMode.popular;
 
   void select(MenuBoardSortMode mode) {
     state = mode;

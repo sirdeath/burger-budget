@@ -10,6 +10,7 @@ import '../../domain/entities/menu_item.dart';
 import '../providers/menu_search_provider.dart';
 import 'menu_price_tile.dart';
 
+
 class FranchiseMenuView extends ConsumerWidget {
   const FranchiseMenuView({super.key});
 
@@ -81,6 +82,19 @@ class FranchiseMenuView extends ConsumerWidget {
     MenuBoardSortMode mode,
   ) {
     switch (mode) {
+      case MenuBoardSortMode.popular:
+        items.sort((a, b) {
+          final aSig = AppConstants.isSignatureMenu(
+                  a.franchise, a.name)
+              ? 0
+              : 1;
+          final bSig = AppConstants.isSignatureMenu(
+                  b.franchise, b.name)
+              ? 0
+              : 1;
+          if (aSig != bSig) return aSig.compareTo(bSig);
+          return a.name.compareTo(b.name);
+        });
       case MenuBoardSortMode.priceAsc:
         items.sort(
           (a, b) => a.price.compareTo(b.price),

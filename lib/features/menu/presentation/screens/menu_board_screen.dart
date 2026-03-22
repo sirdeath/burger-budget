@@ -146,6 +146,18 @@ class _MenuBoardScreenState
             child: Row(
               children: [
                 _SortChip(
+                  label: '인기순',
+                  selected: sortMode ==
+                      MenuBoardSortMode.popular,
+                  onSelected: () => ref
+                      .read(
+                        menuBoardSortProvider.notifier,
+                      )
+                      .select(MenuBoardSortMode.popular),
+                  theme: theme,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                _SortChip(
                   label: '가격 낮은순',
                   selected: sortMode ==
                       MenuBoardSortMode.priceAsc,

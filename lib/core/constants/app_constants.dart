@@ -57,6 +57,58 @@ class AppConstants {
     'lot': 'https://www.lotteeatz.com/brand/ria',
   };
 
+  // 시그니처/인기 메뉴 키워드 (메뉴명에 포함되면 인기순에서 상위 노출)
+  static const Map<String, List<String>> signatureMenus = {
+    'mcd': [
+      '빅맥',
+      '1955',
+      '맥치킨',
+      '쿼터파운더',
+      '맥스파이시',
+      '불고기',
+      '맥너겟',
+      '해피밀',
+    ],
+    'bk': [
+      '와퍼',
+      '콰트로',
+      '몬스터',
+      '통새우',
+      '불고기',
+      '스태커',
+    ],
+    'kfc': [
+      '징거',
+      '타워',
+      '오리지널',
+      '핫크리스피',
+      '갓양념',
+      '켄터키',
+    ],
+    'mom': [
+      '싸이버거',
+      '불싸이',
+      '치즈싸이',
+      '언빌리버블',
+      '딥치즈',
+      '후라이드',
+    ],
+    'lot': [
+      '불고기',
+      '데리',
+      '한우',
+      '새우',
+      '리아치즈',
+      '양념치킨',
+    ],
+  };
+
+  /// franchise 코드와 메뉴명으로 시그니처 여부 판단
+  static bool isSignatureMenu(String franchise, String name) {
+    final keywords = signatureMenus[franchise] ?? [];
+    return keywords.any((k) => name.contains(k));
+  }
+
   // Budget limits
   static const int minBudget = 1000;
   static const int maxBudget = 100000;

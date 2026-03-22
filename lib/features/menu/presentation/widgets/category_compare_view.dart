@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -84,6 +85,19 @@ class CategoryCompareView extends ConsumerWidget {
     final filtered = _filterItems(items, query);
     final sorted = List.of(filtered);
     switch (sortMode) {
+      case MenuBoardSortMode.popular:
+        sorted.sort((a, b) {
+          final aSig = AppConstants.isSignatureMenu(
+                  a.franchise, a.name)
+              ? 0
+              : 1;
+          final bSig = AppConstants.isSignatureMenu(
+                  b.franchise, b.name)
+              ? 0
+              : 1;
+          if (aSig != bSig) return aSig.compareTo(bSig);
+          return a.name.compareTo(b.name);
+        });
       case MenuBoardSortMode.priceAsc:
         sorted.sort(
           (a, b) => a.price.compareTo(b.price),
