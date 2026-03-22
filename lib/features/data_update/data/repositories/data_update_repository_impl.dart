@@ -81,11 +81,15 @@ class DataUpdateRepositoryImpl implements DataUpdateRepository {
   }
 
   static int _compareVersions(String a, String b) {
-    final aParts = a.split('.').map(int.parse).toList();
-    final bParts = b.split('.').map(int.parse).toList();
-    if (aParts[0] != bParts[0]) {
-      return aParts[0].compareTo(bParts[0]);
+    final aParts = a.split('.').map((s) => int.tryParse(s) ?? 0).toList();
+    final bParts = b.split('.').map((s) => int.tryParse(s) ?? 0).toList();
+    final maxLen =
+        aParts.length > bParts.length ? aParts.length : bParts.length;
+    for (var i = 0; i < maxLen; i++) {
+      final av = i < aParts.length ? aParts[i] : 0;
+      final bv = i < bParts.length ? bParts[i] : 0;
+      if (av != bv) return av.compareTo(bv);
     }
-    return aParts[1].compareTo(bParts[1]);
+    return 0;
   }
 }

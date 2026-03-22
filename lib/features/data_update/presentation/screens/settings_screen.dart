@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 import '../providers/data_update_provider.dart';
+import '../providers/package_info_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -104,10 +105,14 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-                  const _InfoTile(
+                  _InfoTile(
                     icon: Icons.info_outline,
                     label: '버전',
-                    value: '1.0.0',
+                    value: ref.watch(packageInfoProvider).when(
+                          data: (info) => info.version,
+                          loading: () => '...',
+                          error: (_, _) => '?',
+                        ),
                   ),
                   const Divider(height: 24),
                   ListTile(

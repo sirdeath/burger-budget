@@ -54,7 +54,7 @@ class AppConstants {
     'bk': 'https://www.burgerking.co.kr',
     'kfc': 'https://www.kfckorea.com',
     'mom': 'https://www.momstouch.co.kr',
-    'lot': 'https://www.lotteeatz.com/brand/LT',
+    'lot': 'https://www.lotteeatz.com/brand/ria',
   };
 
   // Budget limits

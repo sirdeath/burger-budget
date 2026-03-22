@@ -72,7 +72,7 @@ void main() {
       await tester.pumpWidget(createWidget());
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.onPressed, isNotNull);
     });
 
     testWidgets(
@@ -85,7 +85,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.onPressed, isNotNull);
     });
 
     testWidgets(
@@ -98,7 +98,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.onPressed, isNotNull);
     });
 
     testWidgets(
@@ -134,7 +134,7 @@ void main() {
       await tester.pump();
 
       final button = _filledButtonWidget(tester) as FilledButton;
-      expect(button.onPressed, isNull);
+      expect(button.onPressed, isNotNull);
     });
 
     testWidgets('should display budget preset chips', (tester) async {

@@ -30,6 +30,11 @@ class DataUpdateNotifier extends _$DataUpdateNotifier {
   }
 
   Future<void> checkAndUpdate() async {
+    if (state.status == UpdateStatus.checking ||
+        state.status == UpdateStatus.downloading) {
+      return;
+    }
+
     final repo = ref.read(dataUpdateRepositoryProvider);
 
     state = (
@@ -39,6 +44,7 @@ class DataUpdateNotifier extends _$DataUpdateNotifier {
     );
 
     final checkResult = await repo.checkForUpdate();
+    if (!ref.mounted) return;
     switch (checkResult) {
       case Success(data: final hasUpdate):
         if (!hasUpdate) {
@@ -65,6 +71,7 @@ class DataUpdateNotifier extends _$DataUpdateNotifier {
     );
 
     final downloadResult = await repo.downloadAndApply();
+    if (!ref.mounted) return;
     switch (downloadResult) {
       case Success():
         final newVersion = await repo.getLocalVersion();
