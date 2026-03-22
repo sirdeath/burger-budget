@@ -193,11 +193,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   const SizedBox(
                                     height: AppSpacing.md,
                                   ),
-                                  const _PersonCountSelector(),
-                                  const SizedBox(
-                                    height: AppSpacing.md,
+                                  const Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _PersonCountSelector(),
+                                      ),
+                                      SizedBox(width: AppSpacing.md),
+                                      Expanded(
+                                        child: _DeliveryModeToggle(),
+                                      ),
+                                    ],
                                   ),
-                                  const _DeliveryModeToggle(),
                                 ],
                               ),
                             ),
@@ -321,16 +329,20 @@ class _DeliveryModeToggle extends ConsumerWidget {
           segments: const [
             ButtonSegment(
               value: false,
-              label: Text('매장/포장'),
-              icon: Icon(Icons.storefront),
+              label: Text('매장'),
+              icon: Icon(Icons.storefront, size: 16),
             ),
             ButtonSegment(
               value: true,
               label: Text('배달'),
-              icon: Icon(Icons.delivery_dining),
+              icon: Icon(Icons.delivery_dining, size: 16),
             ),
           ],
           selected: {isDelivery},
+          style: const ButtonStyle(
+            visualDensity: VisualDensity.compact,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
           onSelectionChanged: (selected) {
             HapticFeedback.selectionClick();
             ref

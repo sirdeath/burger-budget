@@ -111,9 +111,13 @@ class AppConstants {
 
   // Budget limits
   static const int minBudget = 1000;
-  static const int maxBudget = 100000;
-  static const int sliderMaxBudget = 50000;
-  static const int sliderStep = 1000;
-  static const List<int> budgetPresets = [5000, 8000, 10000, 15000, 20000];
+  static const int maxBudget = 50000;
+  static const List<int> budgetPresets = [
+    5000,
+    10000,
+    15000,
+    20000,
+    30000,
+  ];
   static const int maxRecommendations = 5;
 }

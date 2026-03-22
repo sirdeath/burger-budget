@@ -141,20 +141,20 @@ void main() {
       await tester.pumpWidget(createWidget());
 
       expect(find.text('5천'), findsOneWidget);
-      expect(find.text('8천'), findsOneWidget);
       expect(find.text('1만'), findsOneWidget);
       expect(find.text('1.5만'), findsOneWidget);
       expect(find.text('2만'), findsOneWidget);
+      expect(find.text('3만'), findsOneWidget);
       expect(
         find.byType(ChoiceChip),
         findsNWidgets(AppConstants.budgetPresets.length),
       );
     });
 
-    testWidgets('should display budget slider', (tester) async {
+    testWidgets('should not display budget slider', (tester) async {
       await tester.pumpWidget(createWidget());
 
-      expect(find.byType(Slider), findsOneWidget);
+      expect(find.byType(Slider), findsNothing);
     });
 
     testWidgets(
