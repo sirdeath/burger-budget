@@ -437,7 +437,8 @@ class _LastOrderCard extends ConsumerWidget {
             franchise;
         final emoji =
             AppConstants.franchiseEmojis[franchise] ?? '';
-        final dateFormat = DateFormat('M/d HH:mm');
+        const datePattern = 'M/d HH:mm';
+        final dateFormat = DateFormat(datePattern);
 
         final items = <String>[order.mainItem.name];
         if (order.sideItem != null) {

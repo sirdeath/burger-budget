@@ -25,16 +25,11 @@ class _BudgetInputState extends ConsumerState<BudgetInputWidget> {
     super.initState();
     _focusNode.addListener(_onFocusChange);
     // 저장된 예산값이 로드되면 텍스트 필드에 반영
-    Future.microtask(() {
-      ref.listenManual(budgetStateProvider, (prev, next) {
-        if (_isSyncing) return;
-        if (next != null && _controller.text.isEmpty) {
-          _isSyncing = true;
-          _controller.text = '$next';
-          _formatDisplay();
-          _isSyncing = false;
-        }
-      }, fireImmediately: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final saved = ref.read(budgetStateProvider);
+      if (saved != null && _controller.text.isEmpty) {
+        _controller.text = formatKRW(saved).replaceAll('원', '');
+      }
     });
   }
 
