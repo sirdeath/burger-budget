@@ -1,7 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
-
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/result.dart';
 import '../../../menu/domain/entities/menu_item.dart';
@@ -214,44 +212,38 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
                 : 0);
 
         // ── 디저트 후처리 부착 ──
-        // 먼저 디저트 없이 스코어 계산
         final comboBase = Recommendation(
           mainItem: mainItem,
           sideItem: side,
           drinkItem: drink,
         );
-        final scoreBase = _unifiedScore(
+        final baseFeatures = _computeFeatures(
           comboBase,
           budget,
           deliveryMode,
           pref,
         );
+        final scoreBase = _scoreFromFeatures(baseFeatures);
 
-        // 예산 내 디저트 중 스코어 상승폭이 임계값 이상인
-        // 최고 디저트만 부착
+        // base features 재사용: dessert 필드만 변경해서 스코어 비교
         MenuItem? bestDessert;
         double bestScore = scoreBase;
+        Map<String, double> bestFeatures = baseFeatures;
 
         for (final d in desserts) {
           if (_itemPrice(d, deliveryMode) > afterDrink) {
             continue;
           }
-          final withDessert = Recommendation(
-            mainItem: mainItem,
-            sideItem: side,
-            drinkItem: drink,
-            dessertItem: d,
-          );
-          final s = _unifiedScore(
-            withDessert,
-            budget,
-            deliveryMode,
-            pref,
-          );
+          final withDessertFeatures = {
+            ...baseFeatures,
+            'dessert': 1.0,
+          };
+          final s = _scoreFromFeatures(withDessertFeatures);
           if (s - scoreBase > _dessertThreshold &&
               s > bestScore) {
             bestDessert = d;
             bestScore = s;
+            bestFeatures = withDessertFeatures;
           }
         }
 
@@ -264,7 +256,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
               )
             : comboBase;
 
-        results.add(_ScoredCombo(finalCombo, bestScore));
+        results.add(
+          _ScoredCombo(finalCombo, bestScore, bestFeatures),
+        );
       }
     }
   }
@@ -344,42 +338,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       f['pref']! * 0.25 +
       f['dessert']! * 0.10;
 
-  double _unifiedScore(
-    Recommendation combo,
-    int budget,
-    bool deliveryMode,
-    UserPreference pref,
-  ) {
-    if (budget <= 0) return 0;
-    final features =
-        _computeFeatures(combo, budget, deliveryMode, pref);
-    final score = _scoreFromFeatures(features);
-
-    if (kDebugMode && _shouldLog) {
-      _logCombo(combo, deliveryMode, score, features);
-    }
-
-    return score;
-  }
-
-  /// scoreBreakdown 포함 Recommendation 생성
-  Recommendation _withBreakdown(
-    Recommendation combo,
-    int budget,
-    bool deliveryMode,
-    UserPreference pref,
-  ) {
-    final features =
-        _computeFeatures(combo, budget, deliveryMode, pref);
-    return Recommendation(
-      mainItem: combo.mainItem,
-      sideItem: combo.sideItem,
-      drinkItem: combo.drinkItem,
-      dessertItem: combo.dessertItem,
-      scoreBreakdown: features,
-    );
-  }
-
   // ── preferenceFit 계산 ──
 
   static double _calcPreferenceFit(
@@ -391,16 +349,13 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     double raw = 0;
     final mainId = combo.mainItem.id;
 
-    // 즐겨찾기 메인: +0.35
+    // 누적 가산 (즐겨찾기 + 최근성 중복 허용, clamp로 상한)
     if (pref.favoriteItemIds.contains(mainId)) {
       raw += 0.35;
     }
-    // 최근 30일 주문 메인: +0.25
-    else if (pref.recent30dItemIds.contains(mainId)) {
+    if (pref.recent30dItemIds.contains(mainId)) {
       raw += 0.25;
-    }
-    // 최근 90일 주문 메인: +0.10
-    else if (pref.recent90dItemIds.contains(mainId)) {
+    } else if (pref.recent90dItemIds.contains(mainId)) {
       raw += 0.10;
     }
 
@@ -461,32 +416,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     }
   }
 
-  // 로그 플래그 (전수 열거 시 너무 많으므로 상위만)
-  static final bool _shouldLog = false;
-
-  static void _logCombo(
-    Recommendation combo,
-    bool deliveryMode,
-    double score,
-    Map<String, double> features,
-  ) {
-    final price = _comboPrice(combo, deliveryMode);
-    final parts = <String>[combo.mainItem.name];
-    if (combo.sideItem != null) parts.add(combo.sideItem!.name);
-    if (combo.drinkItem != null) {
-      parts.add(combo.drinkItem!.name);
-    }
-    if (combo.dessertItem != null) {
-      parts.add(combo.dessertItem!.name);
-    }
-    final franchise = combo.mainItem.franchise;
-    debugPrint(
-      '[COMBO] $franchise: ${parts.join(" + ")} '
-      '| $price원 | score: ${score.toStringAsFixed(3)} '
-      '| ${features.entries.map((e) => "${e.key}:${e.value.toStringAsFixed(2)}").join(" ")}',
-    );
-  }
-
   // ══════════════════════════════════════════════
   // 3단계: 다양성 보장 (라운드로빈)
   // ══════════════════════════════════════════════
@@ -532,7 +461,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           final count = mainCounts[mainId] ?? 0;
           if (count >= _maxPerMain) continue;
 
-          result.add(entry.combo);
+          // scoreBreakdown 주입 (diversity 단계에서)
+          result.add(Recommendation(
+            mainItem: entry.combo.mainItem,
+            sideItem: entry.combo.sideItem,
+            drinkItem: entry.combo.drinkItem,
+            dessertItem: entry.combo.dessertItem,
+            scoreBreakdown: entry.features,
+          ));
           mainCounts[mainId] = count + 1;
           added = true;
           break;
@@ -540,14 +476,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         indices[franchise] = idx;
       }
       if (!added) break;
-    }
-
-    // 상위 결과 로그 (debug 모드)
-    if (kDebugMode && result.isNotEmpty) {
-      debugPrint(
-        '[RECOMMEND] ${result.length} combos selected '
-        '(from ${scored.length} total)',
-      );
     }
 
     return result;
@@ -574,34 +502,25 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         List<Recommendation>.from(recommendations);
     switch (sort) {
       case SortMode.recommended:
-        // 통합 스코어로 정렬 (다양성 단계와 동일 기준)
+        // scoreBreakdown은 diversity 단계에서 이미 주입됨
+        // 캐싱된 스코어로 정렬 (재계산 없음)
         sorted.sort((a, b) {
           final aScore =
-              _unifiedScore(a, budget, deliveryMode, pref);
+              _scoreFromFeatures(a.scoreBreakdown);
           final bScore =
-              _unifiedScore(b, budget, deliveryMode, pref);
+              _scoreFromFeatures(b.scoreBreakdown);
           final cmp = bScore.compareTo(aScore);
           if (cmp != 0) return cmp;
+          // 동점 tie-breaker: 예산 타겟에 더 가까운 것
           final target = _targetUtilization(budget);
           final aUtil =
-              (_comboPrice(a, deliveryMode) / budget)
-                  .abs();
+              a.scoreBreakdown['utilPct'] ?? 0.0;
           final bUtil =
-              (_comboPrice(b, deliveryMode) / budget)
-                  .abs();
+              b.scoreBreakdown['utilPct'] ?? 0.0;
           return (aUtil - target)
               .abs()
               .compareTo((bUtil - target).abs());
         });
-        // scoreBreakdown 주입
-        for (var i = 0; i < sorted.length; i++) {
-          sorted[i] = _withBreakdown(
-            sorted[i],
-            budget,
-            deliveryMode,
-            pref,
-          );
-        }
         // exploration 슬롯 (80/20 혼합)
         if (!pref.isEmpty && sorted.length >= 6) {
           _applyExploration(sorted, pref);
@@ -631,8 +550,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
 
 /// 점수가 매겨진 추천 조합 (내부 정렬용)
 class _ScoredCombo {
-  const _ScoredCombo(this.combo, this.score);
+  const _ScoredCombo(this.combo, this.score, this.features);
 
   final Recommendation combo;
   final double score;
+  final Map<String, double> features;
 }

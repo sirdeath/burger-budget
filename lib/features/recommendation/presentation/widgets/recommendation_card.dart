@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../utils/recommendation_explanation.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_format.dart';
@@ -248,10 +249,10 @@ class RecommendationCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                      if (recommendation
-                          .explanations.isNotEmpty) ...[
+                      if (getExplanations(recommendation)
+                          .isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.sm),
-                        ...recommendation.explanations.map(
+                        ...getExplanations(recommendation).map(
                           (e) => Padding(
                             padding: const EdgeInsets.only(
                               bottom: 2,
