@@ -362,6 +362,60 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     return score;
   }
 
+  /// scoreBreakdown 포함 Recommendation 생성
+  Recommendation _withBreakdown(
+    Recommendation combo,
+    int budget,
+    bool deliveryMode,
+    UserPreference pref,
+  ) {
+    final m = combo.mainItem;
+    final util =
+        (_comboPrice(combo, deliveryMode) / budget)
+            .clamp(0.0, 1.0);
+    final target = _targetUtilization(budget);
+    final rawUtil =
+        max(0.0, 1.0 - (util - target).abs() / 0.20);
+    final utilization = pow(rawUtil, 0.7).toDouble();
+    final hasSide =
+        (combo.sideItem != null || m.includesSide)
+            ? 1.0
+            : 0.0;
+    final hasDrink =
+        (combo.drinkItem != null || m.includesDrink)
+            ? 1.0
+            : 0.0;
+    final mealCompleteness =
+        0.55 + hasSide * 0.25 + hasDrink * 0.20;
+
+    double setBonus = 0;
+    if (m.type == MenuType.set_) {
+      if (m.includesSide && m.includesDrink) {
+        setBonus = 1.0;
+      } else if (m.includesSide || m.includesDrink) {
+        setBonus = 0.5;
+      }
+    }
+
+    return Recommendation(
+      mainItem: combo.mainItem,
+      sideItem: combo.sideItem,
+      drinkItem: combo.drinkItem,
+      dessertItem: combo.dessertItem,
+      scoreBreakdown: {
+        'util': utilization,
+        'utilPct': util,
+        'meal': mealCompleteness,
+        'set': setBonus,
+        'sig': AppConstants.isSignatureMenu(
+                m.franchise, m.name)
+            ? 1.0
+            : 0.0,
+        'pref': _calcPreferenceFit(combo, pref),
+      },
+    );
+  }
+
   // ── preferenceFit 계산 ──
 
   static double _calcPreferenceFit(
@@ -406,6 +460,44 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     }
 
     return raw.clamp(0.0, 1.0);
+  }
+
+  // ── exploration: 취향 수렴 방지 ──
+  // 위치 3, 6에 exploration 아이템 끼워넣기
+
+  static void _applyExploration(
+    List<Recommendation> sorted,
+    UserPreference pref,
+  ) {
+    // preferenceFit이 낮지만 전체 스코어는 괜찮은 후보 찾기
+    final exploreCandidates = <int>[];
+    for (var i = 2; i < sorted.length; i++) {
+      final p = sorted[i].scoreBreakdown['pref'] ?? 0;
+      final meal = sorted[i].scoreBreakdown['meal'] ?? 0;
+      if (p < 0.15 && meal >= 0.55) {
+        exploreCandidates.add(i);
+      }
+    }
+
+    if (exploreCandidates.isEmpty) return;
+
+    // 위치 2(3번째)에 첫 번째 exploration 삽입
+    const insertPositions = [2, 5]; // 0-indexed: 3번째, 6번째
+    var inserted = 0;
+    for (final pos in insertPositions) {
+      if (inserted >= exploreCandidates.length) break;
+      final adjustedPos = pos + inserted;
+      if (adjustedPos >= sorted.length) break;
+
+      final candidateIdx =
+          exploreCandidates[inserted] + inserted;
+      if (candidateIdx >= sorted.length) break;
+      if (candidateIdx <= adjustedPos) continue;
+
+      final item = sorted.removeAt(candidateIdx);
+      sorted.insert(adjustedPos, item);
+      inserted++;
+    }
   }
 
   // 로그 플래그 (전수 열거 시 너무 많으므로 상위만)
@@ -529,7 +621,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
               _unifiedScore(b, budget, deliveryMode, pref);
           final cmp = bScore.compareTo(aScore);
           if (cmp != 0) return cmp;
-          // 동점 tie-breaker: 예산 타겟에 더 가까운 것
           final target = _targetUtilization(budget);
           final aUtil =
               (_comboPrice(a, deliveryMode) / budget)
@@ -541,6 +632,19 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
               .abs()
               .compareTo((bUtil - target).abs());
         });
+        // scoreBreakdown 주입
+        for (var i = 0; i < sorted.length; i++) {
+          sorted[i] = _withBreakdown(
+            sorted[i],
+            budget,
+            deliveryMode,
+            pref,
+          );
+        }
+        // exploration 슬롯 (80/20 혼합)
+        if (!pref.isEmpty && sorted.length >= 6) {
+          _applyExploration(sorted, pref);
+        }
       case SortMode.saving:
         sorted.sort((a, b) {
           return _comboPrice(a, deliveryMode)

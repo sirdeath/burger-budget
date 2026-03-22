@@ -248,6 +248,47 @@ class RecommendationCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (recommendation
+                          .explanations.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        ...recommendation.explanations.map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 2,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  size: 12,
+                                  color: theme
+                                      .colorScheme.primary
+                                      .withValues(
+                                        alpha: 0.7,
+                                      ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    e,
+                                    style: theme
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                      color: theme
+                                          .colorScheme
+                                          .primary
+                                          .withValues(
+                                            alpha: 0.7,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
