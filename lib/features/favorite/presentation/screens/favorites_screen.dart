@@ -9,6 +9,7 @@ import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../app_shell/presentation/providers/navigation_provider.dart';
+import '../../../menu/presentation/screens/menu_detail_screen.dart';
 import '../../domain/entities/rich_favorite.dart';
 import '../providers/favorite_provider.dart';
 
@@ -77,6 +78,7 @@ class FavoritesScreen extends ConsumerWidget {
                 },
                 child: _RichFavoriteCard(
                   favorite: favorite,
+                  onTap: () => _showDetail(context, favorite),
                   onDelete: () async {
                     await ref
                         .read(favoriteListProvider.notifier)
@@ -106,15 +108,29 @@ class FavoritesScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _showDetail(BuildContext context, RichFavorite favorite) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => MenuDetailScreen(
+        menuItem: favorite.mainItem,
+        sideItem: favorite.sideItem,
+        drinkItem: favorite.drinkItem,
+      ),
+    );
+  }
 }
 
 class _RichFavoriteCard extends StatelessWidget {
   const _RichFavoriteCard({
     required this.favorite,
+    required this.onTap,
     required this.onDelete,
   });
 
   final RichFavorite favorite;
+  final VoidCallback onTap;
   final VoidCallback onDelete;
 
   @override
@@ -126,10 +142,13 @@ class _RichFavoriteCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Favorite icon with franchise emoji
             Container(
@@ -154,6 +173,7 @@ class _RichFavoriteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
@@ -164,6 +184,7 @@ class _RichFavoriteCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: AppSpacing.xs),
                       const Icon(
                         Icons.favorite,
                         color: Colors.red,
@@ -233,6 +254,7 @@ class _RichFavoriteCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

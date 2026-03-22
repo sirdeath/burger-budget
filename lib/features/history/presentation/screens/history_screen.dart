@@ -9,6 +9,7 @@ import '../../../../core/utils/menu_type_display.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../app_shell/presentation/providers/navigation_provider.dart';
+import '../../../menu/presentation/screens/menu_detail_screen.dart';
 import '../../domain/entities/rich_order_history.dart';
 import '../providers/history_provider.dart';
 
@@ -100,6 +101,7 @@ class HistoryScreen extends ConsumerWidget {
                 },
                 child: _RichHistoryCard(
                   order: order,
+                  onTap: () => _showDetail(context, order),
                   onDelete: () async {
                     await ref
                         .read(historyListProvider.notifier)
@@ -163,6 +165,18 @@ class HistoryScreen extends ConsumerWidget {
         );
       }
     }
+  }
+
+  void _showDetail(BuildContext context, RichOrderHistory order) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => MenuDetailScreen(
+        menuItem: order.mainItem,
+        sideItem: order.sideItem,
+        drinkItem: order.drinkItem,
+      ),
+    );
   }
 }
 
@@ -243,10 +257,12 @@ class _StatsCard extends StatelessWidget {
 class _RichHistoryCard extends StatelessWidget {
   const _RichHistoryCard({
     required this.order,
+    required this.onTap,
     required this.onDelete,
   });
 
   final RichOrderHistory order;
+  final VoidCallback onTap;
   final VoidCallback onDelete;
 
   @override
@@ -258,12 +274,15 @@ class _RichHistoryCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Franchise icon
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Franchise icon
             Container(
               width: 48,
               height: 48,
@@ -353,6 +372,7 @@ class _RichHistoryCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
