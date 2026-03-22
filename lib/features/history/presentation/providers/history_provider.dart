@@ -88,3 +88,9 @@ Future<List<RichOrderHistory>> richHistoryList(Ref ref) async {
   }
   return results;
 }
+
+@riverpod
+Future<RichOrderHistory?> lastOrderHistory(Ref ref) async {
+  final list = await ref.watch(richHistoryListProvider.future);
+  return list.isEmpty ? null : list.first;
+}

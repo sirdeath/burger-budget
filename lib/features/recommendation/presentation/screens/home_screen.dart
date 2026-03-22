@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:intl/intl.dart';
+
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_format.dart';
+import '../../../history/presentation/providers/history_provider.dart';
+import '../../../menu/presentation/screens/menu_detail_screen.dart';
 import '../../../menu/presentation/screens/menu_search_screen.dart';
 import '../providers/recommendation_provider.dart';
 import '../widgets/budget_input.dart' show BudgetInputWidget;
@@ -166,7 +173,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.md),
+                      const _LastOrderCard(),
+                      const SizedBox(height: AppSpacing.md),
                       SlideTransition(
                         position: _budgetSlide,
                         child: FadeTransition(
@@ -403,6 +412,123 @@ class _PersonCountAndDelivery extends ConsumerWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+class _LastOrderCard extends ConsumerWidget {
+  const _LastOrderCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lastOrder = ref.watch(lastOrderHistoryProvider);
+
+    return lastOrder.when(
+      data: (order) {
+        if (order == null) return const SizedBox.shrink();
+
+        final theme = Theme.of(context);
+        final franchise = order.mainItem.franchise;
+        final color = AppTheme.franchiseColor(
+          franchise,
+          theme.brightness,
+        );
+        final name = AppConstants.franchiseNames[franchise] ??
+            franchise;
+        final emoji =
+            AppConstants.franchiseEmojis[franchise] ?? '';
+        final dateFormat = DateFormat('M/d HH:mm');
+
+        final items = <String>[order.mainItem.name];
+        if (order.sideItem != null) {
+          items.add(order.sideItem!.name);
+        }
+        if (order.drinkItem != null) {
+          items.add(order.drinkItem!.name);
+        }
+
+        return Card(
+          margin: EdgeInsets.zero,
+          child: InkWell(
+            onTap: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => MenuDetailScreen(
+                menuItem: order.mainItem,
+                sideItem: order.sideItem,
+                drinkItem: order.drinkItem,
+              ),
+            ),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$emoji $name',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: color),
+                        ),
+                        Text(
+                          items.join(' + '),
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatKRW(order.totalPrice),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        dateFormat.format(order.createdAt),
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: theme.colorScheme.outline,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

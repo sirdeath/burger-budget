@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/providers.dart';
@@ -7,23 +8,60 @@ import '../../domain/entities/recommendation.dart';
 
 part 'recommendation_provider.g.dart';
 
+const _keyBudget = 'home_budget';
+const _keyPersonCount = 'home_person_count';
+const _keyDeliveryMode = 'home_delivery_mode';
+const _keyFranchises = 'home_franchises';
+
 @riverpod
 class BudgetState extends _$BudgetState {
   @override
-  int? build() => null;
+  int? build() {
+    _load();
+    return null;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_keyBudget);
+    if (saved != null && state == null) {
+      state = saved;
+    }
+  }
 
   void setBudget(int? value) {
     state = value;
+    _save(value);
+  }
+
+  Future<void> _save(int? value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value != null) {
+      await prefs.setInt(_keyBudget, value);
+    } else {
+      await prefs.remove(_keyBudget);
+    }
   }
 }
 
 @riverpod
 class SelectedFranchises extends _$SelectedFranchises {
   @override
-  Set<String> build() => {};
+  Set<String> build() {
+    _load();
+    return {};
+  }
 
   bool get isAllSelected =>
       state.length == AppConstants.franchiseCodes.length;
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_keyFranchises);
+    if (saved != null && state.isEmpty) {
+      state = saved.toSet();
+    }
+  }
 
   void toggle(String code) {
     final next = Set<String>.from(state);
@@ -33,14 +71,23 @@ class SelectedFranchises extends _$SelectedFranchises {
       next.add(code);
     }
     state = next;
+    _save(next);
   }
 
   void toggleAll() {
     if (isAllSelected) {
       state = {};
+      _save({});
     } else {
-      state = Set<String>.from(AppConstants.franchiseCodes);
+      final all = Set<String>.from(AppConstants.franchiseCodes);
+      state = all;
+      _save(all);
     }
+  }
+
+  Future<void> _save(Set<String> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_keyFranchises, value.toList());
   }
 }
 
@@ -57,21 +104,61 @@ class SelectedSortMode extends _$SelectedSortMode {
 @riverpod
 class PersonCountState extends _$PersonCountState {
   @override
-  int build() => 1;
+  int build() {
+    _load();
+    return 1;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_keyPersonCount);
+    if (saved != null && state == 1) {
+      state = saved.clamp(1, 4);
+    }
+  }
 
   void setCount(int count) {
-    state = count.clamp(1, 4);
+    final clamped = count.clamp(1, 4);
+    state = clamped;
+    _save(clamped);
+  }
+
+  Future<void> _save(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyPersonCount, value);
   }
 }
 
 @riverpod
 class DeliveryModeState extends _$DeliveryModeState {
   @override
-  bool build() => false;
+  bool build() {
+    _load();
+    return false;
+  }
 
-  void toggle() => state = !state;
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool(_keyDeliveryMode);
+    if (saved != null) {
+      state = saved;
+    }
+  }
 
-  void setMode({required bool isDelivery}) => state = isDelivery;
+  void toggle() {
+    state = !state;
+    _save(state);
+  }
+
+  void setMode({required bool isDelivery}) {
+    state = isDelivery;
+    _save(isDelivery);
+  }
+
+  Future<void> _save(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyDeliveryMode, value);
+  }
 }
 
 enum MenuTypeFilter { all, setOnly, singleOnly }
