@@ -86,15 +86,18 @@ class CategoryCompareView extends ConsumerWidget {
     final sorted = List.of(filtered);
     switch (sortMode) {
       case MenuBoardSortMode.popular:
+        final sigCache = <String, bool>{};
+        bool isSig(MenuItem m) =>
+            sigCache.putIfAbsent(
+              m.id,
+              () => AppConstants.isSignatureMenu(
+                m.franchise,
+                m.name,
+              ),
+            );
         sorted.sort((a, b) {
-          final aSig = AppConstants.isSignatureMenu(
-                  a.franchise, a.name)
-              ? 0
-              : 1;
-          final bSig = AppConstants.isSignatureMenu(
-                  b.franchise, b.name)
-              ? 0
-              : 1;
+          final aSig = isSig(a) ? 0 : 1;
+          final bSig = isSig(b) ? 0 : 1;
           if (aSig != bSig) return aSig.compareTo(bSig);
           return a.name.compareTo(b.name);
         });
