@@ -193,19 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   const SizedBox(
                                     height: AppSpacing.md,
                                   ),
-                                  const Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: _PersonCountSelector(),
-                                      ),
-                                      SizedBox(width: AppSpacing.md),
-                                      Expanded(
-                                        child: _DeliveryModeToggle(),
-                                      ),
-                                    ],
-                                  ),
+                                  const _PersonCountAndDelivery(),
                                 ],
                               ),
                             ),
@@ -307,41 +295,105 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 }
 
-class _DeliveryModeToggle extends ConsumerWidget {
-  const _DeliveryModeToggle();
+class _PersonCountAndDelivery extends ConsumerWidget {
+  const _PersonCountAndDelivery();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(personCountStateProvider);
     final isDelivery = ref.watch(deliveryModeStateProvider);
     final theme = Theme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
+        // 인원 스테퍼
         Text(
-          '주문 방식',
+          '인원',
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
+        IconButton.outlined(
+          onPressed: count > 1
+              ? () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(personCountStateProvider.notifier)
+                      .setCount(count - 1);
+                }
+              : null,
+          icon: const Icon(Icons.remove, size: 16),
+          constraints: const BoxConstraints(
+            minWidth: 32,
+            minHeight: 32,
+          ),
+          padding: EdgeInsets.zero,
+          iconSize: 16,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                Icons.person,
+                size: 24,
+                color: theme.colorScheme.primary,
+              ),
+              if (count > 1)
+                Positioned(
+                  right: -10,
+                  top: -4,
+                  child: Text(
+                    '×$count',
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        IconButton.outlined(
+          onPressed: count < 4
+              ? () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(personCountStateProvider.notifier)
+                      .setCount(count + 1);
+                }
+              : null,
+          icon: const Icon(Icons.add, size: 16),
+          constraints: const BoxConstraints(
+            minWidth: 32,
+            minHeight: 32,
+          ),
+          padding: EdgeInsets.zero,
+          iconSize: 16,
+        ),
+        const Spacer(),
+        // 주문 방식
         SegmentedButton<bool>(
           segments: const [
             ButtonSegment(
               value: false,
               label: Text('매장'),
-              icon: Icon(Icons.storefront, size: 16),
             ),
             ButtonSegment(
               value: true,
               label: Text('배달'),
-              icon: Icon(Icons.delivery_dining, size: 16),
             ),
           ],
           selected: {isDelivery},
           style: const ButtonStyle(
             visualDensity: VisualDensity.compact,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            tapTargetSize:
+                MaterialTapTargetSize.shrinkWrap,
           ),
           onSelectionChanged: (selected) {
             HapticFeedback.selectionClick();
@@ -349,84 +401,6 @@ class _DeliveryModeToggle extends ConsumerWidget {
                 .read(deliveryModeStateProvider.notifier)
                 .setMode(isDelivery: selected.first);
           },
-        ),
-      ],
-    );
-  }
-}
-
-class _PersonCountSelector extends ConsumerWidget {
-  const _PersonCountSelector();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(personCountStateProvider);
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '인원',
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: List.generate(4, (index) {
-            final personCount = index + 1;
-            final isSelected = count == personCount;
-            return Padding(
-              padding: EdgeInsets.only(
-                right: index < 3 ? AppSpacing.sm : 0,
-              ),
-              child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    ref
-                        .read(personCountStateProvider.notifier)
-                        .setCount(personCount);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(
-                      milliseconds: 200,
-                    ),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.colorScheme.primaryContainer
-                          : theme
-                              .colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(
-                        personCount,
-                        (i) => Icon(
-                          Icons.person,
-                          size: 16,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme
-                                  .colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-              ),
-            );
-          }),
         ),
       ],
     );
