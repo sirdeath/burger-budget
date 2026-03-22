@@ -4,19 +4,32 @@ import 'package:burger_budget/features/menu/domain/entities/menu_item.dart';
 import 'package:burger_budget/features/recommendation/data/datasources/recommendation_datasource.dart';
 import 'package:burger_budget/features/recommendation/data/repositories/recommendation_repository_impl.dart';
 import 'package:burger_budget/features/recommendation/domain/entities/recommendation.dart';
+import 'package:burger_budget/features/recommendation/domain/entities/user_preference.dart';
+import 'package:burger_budget/features/recommendation/domain/repositories/user_preference_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRecommendationDatasource extends Mock
     implements RecommendationDatasource {}
 
+class MockUserPreferenceRepository extends Mock
+    implements UserPreferenceRepository {}
+
 void main() {
   late MockRecommendationDatasource mockDatasource;
+  late MockUserPreferenceRepository mockPrefRepo;
   late RecommendationRepositoryImpl repository;
 
   setUp(() {
     mockDatasource = MockRecommendationDatasource();
-    repository = RecommendationRepositoryImpl(mockDatasource);
+    mockPrefRepo = MockUserPreferenceRepository();
+    when(() => mockPrefRepo.getUserPreference()).thenAnswer(
+      (_) async => const UserPreference(),
+    );
+    repository = RecommendationRepositoryImpl(
+      mockDatasource,
+      mockPrefRepo,
+    );
   });
 
   // 기본 후보군 (가격 내림차순, 모두 mcd 프랜차이즈)

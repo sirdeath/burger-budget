@@ -14,7 +14,9 @@ import '../../features/menu/data/repositories/menu_repository_impl.dart';
 import '../../features/menu/domain/repositories/menu_repository.dart';
 import '../../features/recommendation/data/datasources/recommendation_datasource.dart';
 import '../../features/recommendation/data/repositories/recommendation_repository_impl.dart';
+import '../../features/recommendation/data/repositories/user_preference_repository_impl.dart';
 import '../../features/recommendation/domain/repositories/recommendation_repository.dart';
+import '../../features/recommendation/domain/repositories/user_preference_repository.dart';
 import '../database/database_helper.dart';
 import '../database/user_database_helper.dart';
 
@@ -27,9 +29,15 @@ MenuRepository menuRepository(Ref ref) {
 }
 
 @riverpod
+UserPreferenceRepository userPreferenceRepository(Ref ref) {
+  return UserPreferenceRepositoryImpl(UserDatabaseHelper.instance);
+}
+
+@riverpod
 RecommendationRepository recommendationRepository(Ref ref) {
   final datasource = RecommendationDatasource(DatabaseHelper.instance);
-  return RecommendationRepositoryImpl(datasource);
+  final prefRepo = ref.watch(userPreferenceRepositoryProvider);
+  return RecommendationRepositoryImpl(datasource, prefRepo);
 }
 
 @riverpod

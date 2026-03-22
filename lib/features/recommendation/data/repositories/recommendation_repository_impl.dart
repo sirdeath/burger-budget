@@ -6,13 +6,19 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/result.dart';
 import '../../../menu/domain/entities/menu_item.dart';
 import '../../domain/entities/recommendation.dart';
+import '../../domain/entities/user_preference.dart';
 import '../../domain/repositories/recommendation_repository.dart';
+import '../../domain/repositories/user_preference_repository.dart';
 import '../datasources/recommendation_datasource.dart';
 
 class RecommendationRepositoryImpl implements RecommendationRepository {
-  const RecommendationRepositoryImpl(this._datasource);
+  const RecommendationRepositoryImpl(
+    this._datasource,
+    this._prefRepo,
+  );
 
   final RecommendationDatasource _datasource;
+  final UserPreferenceRepository _prefRepo;
 
   /// 같은 메인 아이템이 최종 결과에 최대 몇 개 포함될 수 있는지
   static const _maxPerMain = 2;
@@ -39,14 +45,20 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         franchises,
         deliveryMode: deliveryMode,
       );
-      final combos =
-          _buildAllCombos(candidates, perPerson, deliveryMode);
+      final pref = await _prefRepo.getUserPreference();
+      final combos = _buildAllCombos(
+        candidates,
+        perPerson,
+        deliveryMode,
+        pref,
+      );
       final diverse = _selectDiverse(combos);
       final sorted = _applySortMode(
         diverse,
         sort,
         perPerson,
         deliveryMode,
+        pref,
       );
       return Success(sorted);
     } on Exception catch (e) {
@@ -85,6 +97,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     List<MenuItem> candidates,
     int budget,
     bool deliveryMode,
+    UserPreference pref,
   ) {
     final byFranchise = <String, List<MenuItem>>{};
     for (final item in candidates) {
@@ -123,6 +136,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           drinks,
           desserts,
           budget,
+          pref,
           deliveryMode: deliveryMode,
           skipSide: setItem.includesSide,
           skipDrink: setItem.includesDrink,
@@ -140,6 +154,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           drinks,
           desserts,
           budget,
+          pref,
           deliveryMode: deliveryMode,
         );
       }
@@ -154,7 +169,8 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     List<MenuItem> sides,
     List<MenuItem> drinks,
     List<MenuItem> desserts,
-    int budget, {
+    int budget,
+    UserPreference pref, {
     bool deliveryMode = false,
     bool skipSide = false,
     bool skipDrink = false,
@@ -208,6 +224,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           comboBase,
           budget,
           deliveryMode,
+          pref,
         );
 
         // 예산 내 디저트 중 스코어 상승폭이 임계값 이상인
@@ -229,6 +246,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
             withDessert,
             budget,
             deliveryMode,
+            pref,
           );
           if (s - scoreBase > _dessertThreshold &&
               s > bestScore) {
@@ -270,6 +288,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     Recommendation combo,
     int budget,
     bool deliveryMode,
+    UserPreference pref,
   ) {
     if (budget <= 0) return 0;
 
@@ -292,7 +311,6 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         (combo.drinkItem != null || m.includesDrink)
             ? 1.0
             : 0.0;
-    // 메인 0.55 + 사이드 0.25 + 음료 0.20
     final mealCompleteness =
         0.55 + hasSide * 0.25 + hasDrink * 0.20;
 
@@ -316,11 +334,16 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     final dessertBonus =
         combo.dessertItem != null ? 1.0 : 0.0;
 
-    final score = mealCompleteness * 0.30 +
-        utilization * 0.25 +
-        setBonus * 0.15 +
-        signatureBonus * 0.15 +
-        dessertBonus * 0.15;
+    // 6. Preference fit (시간 가중 + 빈도)
+    final prefFit = _calcPreferenceFit(combo, pref);
+
+    // 최종 가중치 (설계서 최종 버전)
+    final score = mealCompleteness * 0.25 +
+        utilization * 0.20 +
+        setBonus * 0.10 +
+        signatureBonus * 0.10 +
+        prefFit * 0.25 +
+        dessertBonus * 0.10;
 
     // 디버그 로그 (debug 모드에서만)
     if (kDebugMode && _shouldLog) {
@@ -331,11 +354,58 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         'meal': mealCompleteness,
         'set': setBonus,
         'sig': signatureBonus,
+        'pref': prefFit,
         'dessert': dessertBonus,
       });
     }
 
     return score;
+  }
+
+  // ── preferenceFit 계산 ──
+
+  static double _calcPreferenceFit(
+    Recommendation combo,
+    UserPreference pref,
+  ) {
+    if (pref.isEmpty) return 0;
+
+    double raw = 0;
+    final mainId = combo.mainItem.id;
+
+    // 즐겨찾기 메인: +0.35
+    if (pref.favoriteItemIds.contains(mainId)) {
+      raw += 0.35;
+    }
+    // 최근 30일 주문 메인: +0.25
+    else if (pref.recent30dItemIds.contains(mainId)) {
+      raw += 0.25;
+    }
+    // 최근 90일 주문 메인: +0.10
+    else if (pref.recent90dItemIds.contains(mainId)) {
+      raw += 0.10;
+    }
+
+    // 사이드/음료 즐겨찾기: +0.15
+    final sideId = combo.sideItem?.id;
+    final drinkId = combo.drinkItem?.id;
+    if (sideId != null &&
+        pref.favoriteItemIds.contains(sideId)) {
+      raw += 0.075;
+    }
+    if (drinkId != null &&
+        pref.favoriteItemIds.contains(drinkId)) {
+      raw += 0.075;
+    }
+
+    // 프랜차이즈 최다 주문: +0.15
+    final topFranchise = pref.topFranchise;
+    if (topFranchise != null &&
+        combo.mainItem.franchise == topFranchise) {
+      raw += 0.15;
+    }
+
+    return raw.clamp(0.0, 1.0);
   }
 
   // 로그 플래그 (전수 열거 시 너무 많으므로 상위만)
@@ -445,6 +515,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     SortMode sort,
     int budget,
     bool deliveryMode,
+    UserPreference pref,
   ) {
     final sorted =
         List<Recommendation>.from(recommendations);
@@ -453,9 +524,9 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         // 통합 스코어로 정렬 (다양성 단계와 동일 기준)
         sorted.sort((a, b) {
           final aScore =
-              _unifiedScore(a, budget, deliveryMode);
+              _unifiedScore(a, budget, deliveryMode, pref);
           final bScore =
-              _unifiedScore(b, budget, deliveryMode);
+              _unifiedScore(b, budget, deliveryMode, pref);
           final cmp = bScore.compareTo(aScore);
           if (cmp != 0) return cmp;
           // 동점 tie-breaker: 예산 타겟에 더 가까운 것
